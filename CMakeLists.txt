@@ -15,7 +15,22 @@
 project(vulkanalia)
 cmake_minimum_required(VERSION 3.8)
 
+configure_file(cmake/gtest.cmake.in ${CMAKE_BINARY_DIR}/download/gtest/CMakeLists.txt)
+execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" . 
+                WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/download/gtest")
+execute_process(COMMAND "${CMAKE_COMMAND}" --build . 
+                WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/download/gtest")
+
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+add_subdirectory("${CMAKE_BINARY_DIR}/external/googletest-src"
+                 "${CMAKE_BINARY_DIR}/external/googletest-build")
+add_library(GTest::GTest ALIAS gtest)
+add_library(GTest::Main ALIAS gtest_main)
+
 find_package(Vulkan REQUIRED)
 
 add_executable(vulkanalia main.cpp)
 target_link_libraries(vulkanalia PRIVATE Vulkan::Vulkan)
+
+add_executable(vulkanalia_test test.cpp)
+target_link_libraries(vulkanalia_test PRIVATE GTest::GTest GTest::Main)

@@ -30,6 +30,19 @@
             "command": "rmdir /S /Q build && mkdir build",
             "type": "shell",
             "problemMatcher": []
+        },
+        {
+            "taskName": "Test",
+            "command": "vulkanalia_test",
+            "type": "shell",
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceRoot}/build/Debug"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
         }
     ]
 }
