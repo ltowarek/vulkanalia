@@ -1,0 +1,12 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+    "C_Cpp.clang_format_formatOnSave": true,
+    "editor.formatOnType": true,
+    "files.associations": {
+        "xlocale": "cpp",
+        "xstring": "cpp",
+        "xutility": "cpp",
+        "memory": "cpp",
+        "xmemory0": "cpp"
+    }
+}
