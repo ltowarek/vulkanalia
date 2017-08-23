@@ -29,8 +29,11 @@ add_library(GTest::Main ALIAS gtest_main)
 
 find_package(Vulkan REQUIRED)
 
+add_library(triangle triangle.hpp triangle.cpp)
+add_library(vka::triangle ALIAS triangle)
+target_link_libraries(triangle Vulkan::Vulkan)
+
 add_executable(vulkanalia main.cpp)
-target_link_libraries(vulkanalia PRIVATE Vulkan::Vulkan)
 
 add_executable(vulkanalia_test test.cpp)
-target_link_libraries(vulkanalia_test PRIVATE GTest::GTest GTest::Main)
+target_link_libraries(vulkanalia_test PRIVATE GTest::GTest GTest::Main vka::triangle)

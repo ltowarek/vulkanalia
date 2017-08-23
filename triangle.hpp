@@ -14,8 +14,13 @@
  *limitations under the License.
  */
 
-#include "triangle.hpp"
-#include "gtest/gtest.h"
+#ifndef VULKANALIA_TRIANGLE
+#define VULKANALIA_TRIANGLE
 
-TEST(Dummy, Test) { EXPECT_TRUE(true); }
-TEST(Dummy, TriangleTest) { EXPECT_EQ(vka::tmp(), 10); }
+#include <vulkan/vulkan.hpp>
+
+namespace vka {
+uint32_t tmp();
+}
+
+#endif

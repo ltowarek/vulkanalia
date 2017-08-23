@@ -15,7 +15,7 @@
  */
 
 #include "triangle.hpp"
-#include "gtest/gtest.h"
 
-TEST(Dummy, Test) { EXPECT_TRUE(true); }
-TEST(Dummy, TriangleTest) { EXPECT_EQ(vka::tmp(), 10); }
+namespace vka {
+uint32_t tmp() { return vk::enumerateInstanceExtensionProperties().size(); }
+}
