@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "vulkanalia",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceRoot}/build/Debug",
+            "environment": [],
+            "externalConsole": true
+        }
+    ]
+}
