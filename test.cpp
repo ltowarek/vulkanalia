@@ -23,23 +23,34 @@ TEST(TriangleExample, CreatesInstanceWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_instance(application_info));
 }
 
-TEST(TriangleExample, ReturnsAvailablePhysicalDevices) {
-  vk::ApplicationInfo application_info =
-      vka::create_application_info("Test", {1, 2, 3});
-  vk::UniqueInstance instance = vka::create_instance(application_info);
-  std::vector<vk::PhysicalDevice> devices = vka::get_physical_devices(instance);
+class TriangleExampleWithSharedInstance : public ::testing::Test {
+protected:
+  static void SetUpTestCase() {
+    vk::ApplicationInfo application_info =
+        vka::create_application_info("Test", {1, 2, 3});
+    instance_ = vka::create_instance(application_info);
+  }
+  static vk::UniqueInstance instance_;
+};
+
+vk::UniqueInstance TriangleExampleWithSharedInstance::instance_ =
+    vk::UniqueInstance();
+
+TEST_F(TriangleExampleWithSharedInstance, ReturnsAvailablePhysicalDevices) {
+  std::vector<vk::PhysicalDevice> devices =
+      vka::get_physical_devices(instance_);
   EXPECT_GT(devices.size(), 0);
 }
 
-TEST(TriangleExample, SelectsNonEmptyPhysicalDeviceIfAnyIsAvailable) {
-  vk::ApplicationInfo application_info =
-      vka::create_application_info("Test", {1, 2, 3});
-  vk::UniqueInstance instance = vka::create_instance(application_info);
-  std::vector<vk::PhysicalDevice> devices = vka::get_physical_devices(instance);
+TEST_F(TriangleExampleWithSharedInstance,
+       SelectsNonEmptyPhysicalDeviceIfAnyIsAvailable) {
+  std::vector<vk::PhysicalDevice> devices =
+      vka::get_physical_devices(instance_);
   EXPECT_NE(vka::select_physical_device(devices), vk::PhysicalDevice());
 }
 
-TEST(TriangleExample, SelectsEmptyPhysicalDeviceIfNoneIsAvailable) {
+TEST_F(TriangleExampleWithSharedInstance,
+       SelectsEmptyPhysicalDeviceIfNoneIsAvailable) {
   std::vector<vk::PhysicalDevice> devices;
   EXPECT_EQ(vka::select_physical_device(devices), vk::PhysicalDevice());
 }
