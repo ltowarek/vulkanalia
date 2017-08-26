@@ -17,7 +17,18 @@
 #include "triangle.hpp"
 
 namespace vka {
-vk::Instance create_instance() {
-  return vk::createInstance(vk::InstanceCreateInfo());
+vk::ApplicationInfo create_application_info(const std::string name,
+                                            const Version version) {
+  vk::ApplicationInfo info;
+  info.pApplicationName = name.c_str();
+  info.applicationVersion =
+      VK_MAKE_VERSION(version.major, version.minor, version.patch);
+  info.apiVersion = VK_API_VERSION_1_0;
+  return info;
+}
+vk::Instance create_instance(const vk::ApplicationInfo application_info) {
+  vk::InstanceCreateInfo info;
+  info.pApplicationInfo = &application_info;
+  return vk::createInstance(info);
 }
 }

@@ -20,7 +20,14 @@
 #include <vulkan/vulkan.hpp>
 
 namespace vka {
-vk::Instance create_instance();
+struct Version {
+  uint32_t major;
+  uint32_t minor;
+  uint32_t patch;
+};
+vk::ApplicationInfo create_application_info(const std::string name,
+                                            const Version version);
+vk::Instance create_instance(const vk::ApplicationInfo application_info);
 }
 
 #endif

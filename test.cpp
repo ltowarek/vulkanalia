@@ -18,5 +18,10 @@
 #include "gtest/gtest.h"
 
 TEST(TriangleExample, CreatesInstanceWithoutThrowingException) {
-  ASSERT_NO_THROW(vka::create_instance());
+  vk::ApplicationInfo application_info =
+      vka::create_application_info("Test", {1, 2, 3});
+  EXPECT_NO_THROW({
+    vk::Instance instance = vka::create_instance(application_info);
+    instance.destroy();
+  });
 }
