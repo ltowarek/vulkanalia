@@ -30,6 +30,8 @@ vk::ApplicationInfo create_application_info(const std::string name,
 vk::UniqueInstance create_instance(const vk::ApplicationInfo application_info);
 vk::PhysicalDevice
 select_physical_device(const std::vector<vk::PhysicalDevice> &devices);
+uint32_t find_graphics_queue_family_index(
+    const std::vector<vk::QueueFamilyProperties> &queues);
 }
 
 #endif

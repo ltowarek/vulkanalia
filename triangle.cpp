@@ -38,4 +38,15 @@ select_physical_device(const std::vector<vk::PhysicalDevice> &devices) {
   }
   return devices[0];
 }
+uint32_t find_graphics_queue_family_index(
+    const std::vector<vk::QueueFamilyProperties> &queues) {
+  auto queue = std::find_if(
+      queues.begin(), queues.end(), [](const vk::QueueFamilyProperties &q) {
+        return q.queueFlags & vk::QueueFlagBits::eGraphics;
+      });
+  if (queue == queues.end()) {
+    return UINT32_MAX;
+  }
+  return static_cast<uint32_t>(queue - queues.begin());
+}
 }

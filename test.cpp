@@ -43,8 +43,24 @@ TEST_F(TriangleExampleWithSharedInstance,
   EXPECT_NE(vka::select_physical_device(devices), vk::PhysicalDevice());
 }
 
-TEST_F(TriangleExampleWithSharedInstance,
-       SelectsEmptyPhysicalDeviceIfNoneIsAvailable) {
+TEST(TriangleExample, SelectsEmptyPhysicalDeviceIfNoneIsAvailable) {
   std::vector<vk::PhysicalDevice> devices;
   EXPECT_EQ(vka::select_physical_device(devices), vk::PhysicalDevice());
+}
+
+TEST(TriangleExample, FindsGraphicsQueueFamilyIndexGivenItExists) {
+  vk::QueueFamilyProperties compute_queue;
+  compute_queue.queueFlags = vk::QueueFlagBits::eCompute;
+  vk::QueueFamilyProperties graphics_queue;
+  graphics_queue.queueFlags = vk::QueueFlagBits::eGraphics;
+  std::vector<vk::QueueFamilyProperties> queue_family_properties = {
+      compute_queue, graphics_queue, compute_queue};
+  EXPECT_EQ(vka::find_graphics_queue_family_index(queue_family_properties), 1);
+}
+
+TEST(TriangleExample,
+     ReturnsUINT32MaxValueGivenGraphicsQueueFamilyDoesNotExist) {
+  std::vector<vk::QueueFamilyProperties> queue_family_properties;
+  EXPECT_EQ(vka::find_graphics_queue_family_index(queue_family_properties),
+            UINT32_MAX);
 }
