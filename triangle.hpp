@@ -20,7 +20,7 @@
 #include <vulkan/vulkan.hpp>
 
 namespace vka {
-uint32_t tmp();
+vk::Instance create_instance();
 }
 
 #endif

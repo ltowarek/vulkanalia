@@ -17,5 +17,7 @@
 #include "triangle.hpp"
 
 namespace vka {
-uint32_t tmp() { return vk::enumerateInstanceExtensionProperties().size(); }
+vk::Instance create_instance() {
+  return vk::createInstance(vk::InstanceCreateInfo());
+}
 }
