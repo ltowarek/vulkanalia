@@ -31,4 +31,15 @@ vk::UniqueInstance create_instance(const vk::ApplicationInfo application_info) {
   info.pApplicationInfo = &application_info;
   return vk::createInstanceUnique(info);
 }
+std::vector<vk::PhysicalDevice>
+get_physical_devices(const vk::UniqueInstance &instance) {
+  return instance.get().enumeratePhysicalDevices();
+}
+vk::PhysicalDevice
+select_physical_device(const std::vector<vk::PhysicalDevice> &devices) {
+  if (devices.size() < 1) {
+    return vk::PhysicalDevice();
+  }
+  return devices[0];
+}
 }

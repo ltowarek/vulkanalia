@@ -22,3 +22,24 @@ TEST(TriangleExample, CreatesInstanceWithoutThrowingException) {
       vka::create_application_info("Test", {1, 2, 3});
   EXPECT_NO_THROW(vka::create_instance(application_info));
 }
+
+TEST(TriangleExample, ReturnsAvailablePhysicalDevices) {
+  vk::ApplicationInfo application_info =
+      vka::create_application_info("Test", {1, 2, 3});
+  vk::UniqueInstance instance = vka::create_instance(application_info);
+  std::vector<vk::PhysicalDevice> devices = vka::get_physical_devices(instance);
+  EXPECT_GT(devices.size(), 0);
+}
+
+TEST(TriangleExample, SelectsNonEmptyPhysicalDeviceIfAnyIsAvailable) {
+  vk::ApplicationInfo application_info =
+      vka::create_application_info("Test", {1, 2, 3});
+  vk::UniqueInstance instance = vka::create_instance(application_info);
+  std::vector<vk::PhysicalDevice> devices = vka::get_physical_devices(instance);
+  EXPECT_NE(vka::select_physical_device(devices), vk::PhysicalDevice());
+}
+
+TEST(TriangleExample, SelectsEmptyPhysicalDeviceIfNoneIsAvailable) {
+  std::vector<vk::PhysicalDevice> devices;
+  EXPECT_EQ(vka::select_physical_device(devices), vk::PhysicalDevice());
+}
