@@ -36,16 +36,10 @@ protected:
 vk::UniqueInstance TriangleExampleWithSharedInstance::instance_ =
     vk::UniqueInstance();
 
-TEST_F(TriangleExampleWithSharedInstance, ReturnsAvailablePhysicalDevices) {
-  std::vector<vk::PhysicalDevice> devices =
-      vka::get_physical_devices(instance_);
-  EXPECT_GT(devices.size(), 0);
-}
-
 TEST_F(TriangleExampleWithSharedInstance,
        SelectsNonEmptyPhysicalDeviceIfAnyIsAvailable) {
   std::vector<vk::PhysicalDevice> devices =
-      vka::get_physical_devices(instance_);
+      instance_.get().enumeratePhysicalDevices();
   EXPECT_NE(vka::select_physical_device(devices), vk::PhysicalDevice());
 }
 

@@ -28,8 +28,6 @@ struct Version {
 vk::ApplicationInfo create_application_info(const std::string name,
                                             const Version version);
 vk::UniqueInstance create_instance(const vk::ApplicationInfo application_info);
-std::vector<vk::PhysicalDevice>
-get_physical_devices(const vk::UniqueInstance &instance);
 vk::PhysicalDevice
 select_physical_device(const std::vector<vk::PhysicalDevice> &devices);
 }
