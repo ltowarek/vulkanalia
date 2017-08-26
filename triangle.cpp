@@ -26,9 +26,9 @@ vk::ApplicationInfo create_application_info(const std::string name,
   info.apiVersion = VK_API_VERSION_1_0;
   return info;
 }
-vk::Instance create_instance(const vk::ApplicationInfo application_info) {
+vk::UniqueInstance create_instance(const vk::ApplicationInfo application_info) {
   vk::InstanceCreateInfo info;
   info.pApplicationInfo = &application_info;
-  return vk::createInstance(info);
+  return vk::createInstanceUnique(info);
 }
 }

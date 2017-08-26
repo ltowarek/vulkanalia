@@ -20,8 +20,5 @@
 TEST(TriangleExample, CreatesInstanceWithoutThrowingException) {
   vk::ApplicationInfo application_info =
       vka::create_application_info("Test", {1, 2, 3});
-  EXPECT_NO_THROW({
-    vk::Instance instance = vka::create_instance(application_info);
-    instance.destroy();
-  });
+  EXPECT_NO_THROW(vka::create_instance(application_info));
 }

@@ -27,7 +27,7 @@ struct Version {
 };
 vk::ApplicationInfo create_application_info(const std::string name,
                                             const Version version);
-vk::Instance create_instance(const vk::ApplicationInfo application_info);
+vk::UniqueInstance create_instance(const vk::ApplicationInfo application_info);
 }
 
 #endif
