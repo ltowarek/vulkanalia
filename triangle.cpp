@@ -49,4 +49,18 @@ uint32_t find_graphics_queue_family_index(
   }
   return static_cast<uint32_t>(queue - queues.begin());
 }
+vk::UniqueDevice create_device(const vk::PhysicalDevice &physical_device,
+                               const uint32_t queue_index) {
+  const std::vector<float> queues_priorities = {0.0f};
+  vk::DeviceQueueCreateInfo queue_info;
+  queue_info.queueCount = 1;
+  queue_info.queueFamilyIndex = queue_index;
+  queue_info.pQueuePriorities = queues_priorities.data();
+
+  vk::DeviceCreateInfo device_info;
+  device_info.queueCreateInfoCount = 1;
+  device_info.pQueueCreateInfos = &queue_info;
+
+  return physical_device.createDeviceUnique(device_info);
+}
 }

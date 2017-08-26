@@ -64,3 +64,15 @@ TEST(TriangleExample,
   EXPECT_EQ(vka::find_graphics_queue_family_index(queue_family_properties),
             UINT32_MAX);
 }
+
+TEST_F(TriangleExampleWithSharedInstance,
+       CreatesLogicalDeviceWithoutThrowingException) {
+  const std::vector<vk::PhysicalDevice> devices =
+      instance_.get().enumeratePhysicalDevices();
+  const vk::PhysicalDevice physical_device =
+      vka::select_physical_device(devices);
+  const std::vector<vk::QueueFamilyProperties> queues =
+      physical_device.getQueueFamilyProperties();
+  const uint32_t queue_index = 0;
+  EXPECT_NO_THROW(vka::create_device(physical_device, queue_index));
+}

@@ -32,6 +32,7 @@ vk::PhysicalDevice
 select_physical_device(const std::vector<vk::PhysicalDevice> &devices);
 uint32_t find_graphics_queue_family_index(
     const std::vector<vk::QueueFamilyProperties> &queues);
+vk::UniqueDevice create_device(const vk::PhysicalDevice &physical_device, const uint32_t queue_index);
 }
 
 #endif
