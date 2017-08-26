@@ -37,7 +37,7 @@ get_physical_devices(const vk::UniqueInstance &instance) {
 }
 vk::PhysicalDevice
 select_physical_device(const std::vector<vk::PhysicalDevice> &devices) {
-  if (devices.size() < 1) {
+  if (devices.empty()) {
     return vk::PhysicalDevice();
   }
   return devices[0];
