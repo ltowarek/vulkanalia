@@ -26,7 +26,7 @@ TEST(TriangleExample, CreatesInstanceWithoutThrowingException) {
 class TriangleExampleWithSharedInstance : public ::testing::Test {
 protected:
   static void SetUpTestCase() {
-    vk::ApplicationInfo application_info =
+    const vk::ApplicationInfo application_info =
         vka::create_application_info("Test", {1, 2, 3});
     instance_ = vka::create_instance(application_info);
   }
@@ -75,4 +75,28 @@ TEST_F(TriangleExampleWithSharedInstance,
       physical_device.getQueueFamilyProperties();
   const uint32_t queue_index = 0;
   EXPECT_NO_THROW(vka::create_device(physical_device, queue_index));
+}
+
+class TriangleExampleWithSharedDevice
+    : public TriangleExampleWithSharedInstance {
+protected:
+  static void SetUpTestCase() {
+    const std::vector<vk::PhysicalDevice> devices =
+        instance_.get().enumeratePhysicalDevices();
+    const vk::PhysicalDevice physical_device =
+        vka::select_physical_device(devices);
+    const std::vector<vk::QueueFamilyProperties> queues =
+        physical_device.getQueueFamilyProperties();
+    const uint32_t queue_index = 0;
+    device_ = vka::create_device(physical_device, queue_index);
+  }
+  static vk::UniqueDevice device_;
+};
+
+vk::UniqueDevice TriangleExampleWithSharedDevice::device_ = vk::UniqueDevice();
+
+TEST_F(TriangleExampleWithSharedDevice,
+       CreatesCommandPoolWithoutThrowingException) {
+  const uint32_t queue_index = 0;
+  EXPECT_NO_THROW(vka::create_command_pool(device_.get(), queue_index));
 }

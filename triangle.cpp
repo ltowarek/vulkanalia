@@ -63,4 +63,10 @@ vk::UniqueDevice create_device(const vk::PhysicalDevice &physical_device,
 
   return physical_device.createDeviceUnique(device_info);
 }
+vk::UniqueCommandPool create_command_pool(const vk::Device &device,
+                                          const uint32_t queue_index) {
+  vk::CommandPoolCreateInfo info;
+  info.queueFamilyIndex = queue_index;
+  return device.createCommandPoolUnique(info);
+}
 }
