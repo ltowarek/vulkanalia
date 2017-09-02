@@ -29,6 +29,11 @@ vk::ApplicationInfo create_application_info(const std::string name,
 vk::UniqueInstance create_instance(const vk::ApplicationInfo application_info) {
   vk::InstanceCreateInfo info;
   info.pApplicationInfo = &application_info;
+  std::vector<const char *> extension_names;
+  extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+  extension_names.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+  info.enabledExtensionCount = static_cast<uint32_t>(extension_names.size());
+  info.ppEnabledExtensionNames = extension_names.data();
   return vk::createInstanceUnique(info);
 }
 vk::PhysicalDevice
