@@ -69,4 +69,13 @@ vk::UniqueCommandPool create_command_pool(const vk::Device &device,
   info.queueFamilyIndex = queue_index;
   return device.createCommandPoolUnique(info);
 }
+std::vector<vk::UniqueCommandBuffer>
+create_command_buffers(const vk::Device &device,
+                       const vk::CommandPool &command_pool) {
+  vk::CommandBufferAllocateInfo info;
+  info.commandPool = command_pool;
+  info.commandBufferCount = 1;
+  info.level = vk::CommandBufferLevel::ePrimary;
+  return device.allocateCommandBuffersUnique(info);
+}
 }

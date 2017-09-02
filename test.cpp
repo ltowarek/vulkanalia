@@ -87,16 +87,34 @@ protected:
         vka::select_physical_device(devices);
     const std::vector<vk::QueueFamilyProperties> queues =
         physical_device.getQueueFamilyProperties();
-    const uint32_t queue_index = 0;
-    device_ = vka::create_device(physical_device, queue_index);
+    device_ = vka::create_device(physical_device, queue_index_);
   }
   static vk::UniqueDevice device_;
+  static const uint32_t queue_index_;
 };
 
 vk::UniqueDevice TriangleExampleWithSharedDevice::device_ = vk::UniqueDevice();
+const uint32_t TriangleExampleWithSharedDevice::queue_index_ = 0;
 
 TEST_F(TriangleExampleWithSharedDevice,
        CreatesCommandPoolWithoutThrowingException) {
-  const uint32_t queue_index = 0;
-  EXPECT_NO_THROW(vka::create_command_pool(device_.get(), queue_index));
+  EXPECT_NO_THROW(vka::create_command_pool(device_.get(), queue_index_));
+}
+
+class TriangleExampleWithSharedCommandPool
+    : public TriangleExampleWithSharedDevice {
+protected:
+  static void SetUpTestCase() {
+    command_pool_ = vka::create_command_pool(device_.get(), queue_index_);
+  }
+  static vk::UniqueCommandPool command_pool_;
+};
+
+vk::UniqueCommandPool TriangleExampleWithSharedCommandPool::command_pool_ =
+    vk::UniqueCommandPool();
+
+TEST_F(TriangleExampleWithSharedCommandPool,
+       CreatesCommandBuffersWithoutThrowingException) {
+  EXPECT_NO_THROW(
+      vka::create_command_buffers(device_.get(), command_pool_.get()));
 }

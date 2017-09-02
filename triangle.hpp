@@ -36,6 +36,9 @@ vk::UniqueDevice create_device(const vk::PhysicalDevice &physical_device,
                                const uint32_t queue_index);
 vk::UniqueCommandPool create_command_pool(const vk::Device &device,
                                           const uint32_t queue_index);
+std::vector<vk::UniqueCommandBuffer>
+create_command_buffers(const vk::Device &device,
+                       const vk::CommandPool &command_pool);
 }
 
 #endif
