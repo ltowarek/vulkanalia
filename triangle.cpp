@@ -65,6 +65,11 @@ vk::UniqueDevice create_device(const vk::PhysicalDevice &physical_device,
   vk::DeviceCreateInfo device_info;
   device_info.queueCreateInfoCount = 1;
   device_info.pQueueCreateInfos = &queue_info;
+  std::vector<const char *> extension_names;
+  extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+  device_info.enabledExtensionCount =
+      static_cast<uint32_t>(extension_names.size());
+  device_info.ppEnabledExtensionNames = extension_names.data();
 
   return physical_device.createDeviceUnique(device_info);
 }
