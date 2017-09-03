@@ -44,6 +44,8 @@ create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool);
 ATOM register_window_class(HINSTANCE hInstance, const std::string &class_name);
 HWND create_window(HINSTANCE hInstance, const std::string &class_name);
+vk::UniqueSurfaceKHR create_surface(const vk::Instance &instance,
+                                    HINSTANCE hInstance, HWND hWnd);
 }
 
 #endif

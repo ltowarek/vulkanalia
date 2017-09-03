@@ -132,3 +132,12 @@ TEST(TriangleExample, ReturnsNonNULLHandleGivenWindowIsSuccessfullyCreated) {
   vka::register_window_class(hInstance, class_name);
   EXPECT_TRUE(vka::create_window(hInstance, class_name));
 }
+
+TEST_F(TriangleExampleWithSharedInstance,
+       CreatesSurfaceWithoutThrowingException) {
+  HINSTANCE hInstance = GetModuleHandle(nullptr);
+  const std::string class_name = "class_name";
+  vka::register_window_class(hInstance, class_name);
+  HWND hWnd = vka::create_window(hInstance, class_name);
+  EXPECT_NO_THROW(vka::create_surface(instance_.get(), hInstance, hWnd));
+}

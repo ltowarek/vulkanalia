@@ -126,4 +126,11 @@ HWND create_window(HINSTANCE hInstance, const std::string &class_name) {
                         window_rect.bottom - window_rect.top, nullptr, nullptr,
                         hInstance, nullptr);
 }
+vk::UniqueSurfaceKHR create_surface(const vk::Instance &instance,
+                                    HINSTANCE hInstance, HWND hWnd) {
+  vk::Win32SurfaceCreateInfoKHR info;
+  info.hinstance = hInstance;
+  info.hwnd = hWnd;
+  return instance.createWin32SurfaceKHRUnique(info);
+}
 }
