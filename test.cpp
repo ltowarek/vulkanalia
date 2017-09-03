@@ -118,3 +118,9 @@ TEST_F(TriangleExampleWithSharedCommandPool,
   EXPECT_NO_THROW(
       vka::create_command_buffers(device_.get(), command_pool_.get()));
 }
+
+TEST(TriangleExample, ReturnsNonNULLGivenWindowsClassIsSuccessfullyRegistered) {
+  HINSTANCE hInstance = GetModuleHandle(nullptr);
+  const std::string class_name = "class_name";
+  EXPECT_TRUE(vka::register_window_class(hInstance, class_name));
+}

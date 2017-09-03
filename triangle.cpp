@@ -88,4 +88,31 @@ create_command_buffers(const vk::Device &device,
   info.level = vk::CommandBufferLevel::ePrimary;
   return device.allocateCommandBuffersUnique(info);
 }
+LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  switch (uMsg) {
+  case WM_CLOSE:
+    DestroyWindow(hWnd);
+    PostQuitMessage(0);
+    break;
+  default:
+    break;
+  }
+  return (DefWindowProc(hWnd, uMsg, wParam, lParam));
+}
+ATOM register_window_class(HINSTANCE hInstance, const std::string &class_name) {
+  WNDCLASSEX wcx;
+  wcx.cbSize = sizeof(WNDCLASSEX);
+  wcx.style = CS_HREDRAW | CS_VREDRAW;
+  wcx.lpfnWndProc = WndProc;
+  wcx.cbClsExtra = 0;
+  wcx.cbWndExtra = 0;
+  wcx.hInstance = hInstance;
+  wcx.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+  wcx.hCursor = LoadCursor(nullptr, IDC_ARROW);
+  wcx.hbrBackground = static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
+  wcx.lpszMenuName = nullptr;
+  wcx.lpszClassName = class_name.c_str();
+  wcx.hIconSm = LoadIcon(nullptr, IDI_WINLOGO);
+  return RegisterClassEx(&wcx);
+}
 }
