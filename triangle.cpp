@@ -157,4 +157,18 @@ get_presentation_support(const vk::PhysicalDevice &physical_device,
   }
   return presentation_support;
 }
+uint32_t find_graphics_and_presentation_queue_family_index(
+    const std::vector<vk::QueueFamilyProperties> &queue_properties,
+    const std::vector<vk::Bool32> &presentation_support) {
+  if (queue_properties.size() != presentation_support.size()) {
+    return UINT32_MAX;
+  }
+  for (size_t i = 0; i < queue_properties.size(); ++i) {
+    if (queue_properties[i].queueFlags & vk::QueueFlagBits::eGraphics &&
+        presentation_support[i] == VK_TRUE) {
+      return static_cast<uint32_t>(i);
+    }
+  }
+  return UINT32_MAX;
+}
 }

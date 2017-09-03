@@ -63,6 +63,9 @@ std::vector<vk::Bool32>
 get_presentation_support(const vk::PhysicalDevice &physical_device,
                          const vk::SurfaceKHR &surface,
                          const size_t queue_family_count);
+uint32_t find_graphics_and_presentation_queue_family_index(
+    const std::vector<vk::QueueFamilyProperties> &queue_properties,
+    const std::vector<vk::Bool32> &presentation_support);
 }
 
 #endif

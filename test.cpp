@@ -134,10 +134,13 @@ TEST(TriangleExample, SelectsEmptyPhysicalDeviceIfNoneIsAvailable) {
 TEST(TriangleExample, FindsGraphicsQueueFamilyIndexGivenItExists) {
   vk::QueueFamilyProperties compute_queue;
   compute_queue.queueFlags = vk::QueueFlagBits::eCompute;
+
   vk::QueueFamilyProperties graphics_queue;
   graphics_queue.queueFlags = vk::QueueFlagBits::eGraphics;
+
   std::vector<vk::QueueFamilyProperties> queue_family_properties = {
       compute_queue, graphics_queue, compute_queue};
+
   EXPECT_EQ(vka::find_graphics_queue_family_index(queue_family_properties), 1);
 }
 
@@ -182,4 +185,80 @@ TEST(TriangleExample,
       VulkanCache::queue_family_properties().size());
   EXPECT_EQ(presentation_support.size(),
             VulkanCache::queue_family_properties().size());
+}
+
+TEST(TriangleExample,
+     FindsQueueFamilyIndexWithGraphicsAndPresentationSupportGivenItExists) {
+  vk::QueueFamilyProperties compute_queue;
+  compute_queue.queueFlags = vk::QueueFlagBits::eCompute;
+
+  vk::QueueFamilyProperties graphics_queue;
+  graphics_queue.queueFlags = vk::QueueFlagBits::eGraphics;
+
+  std::vector<vk::QueueFamilyProperties> queue_family_properties = {
+      compute_queue, compute_queue, graphics_queue, graphics_queue};
+  std::vector<vk::Bool32> presentation_support = {VK_FALSE, VK_TRUE, VK_FALSE,
+                                                  VK_TRUE};
+
+  EXPECT_EQ(vka::find_graphics_and_presentation_queue_family_index(
+                queue_family_properties, presentation_support),
+            3);
+}
+
+TEST(
+    TriangleExample,
+    ReturnsUINT32MaxValueGivenGraphicsQueueFamilyDoesNotExistAndQueueSupportsPresentation) {
+  vk::QueueFamilyProperties compute_queue;
+  compute_queue.queueFlags = vk::QueueFlagBits::eCompute;
+
+  std::vector<vk::QueueFamilyProperties> queue_family_properties = {
+      compute_queue};
+  std::vector<vk::Bool32> presentation_support = {VK_TRUE};
+
+  EXPECT_EQ(vka::find_graphics_and_presentation_queue_family_index(
+                queue_family_properties, presentation_support),
+            UINT32_MAX);
+}
+
+TEST(
+    TriangleExample,
+    ReturnsUINT32MaxValueGivenGraphicsQueueFamilyExistsAndQueueDoesNotSupportPresentation) {
+  vk::QueueFamilyProperties graphics_queue;
+  graphics_queue.queueFlags = vk::QueueFlagBits::eGraphics;
+
+  std::vector<vk::QueueFamilyProperties> queue_family_properties = {
+      graphics_queue};
+  std::vector<vk::Bool32> presentation_support = {VK_FALSE};
+
+  EXPECT_EQ(vka::find_graphics_and_presentation_queue_family_index(
+                queue_family_properties, presentation_support),
+            UINT32_MAX);
+}
+
+TEST(
+    TriangleExample,
+    ReturnsUINT32MaxValueGivenGraphicsQueueFamilyDoesNotExistAndQueueDoesNotSupportPresentation) {
+  vk::QueueFamilyProperties compute_queue;
+  compute_queue.queueFlags = vk::QueueFlagBits::eCompute;
+
+  std::vector<vk::QueueFamilyProperties> queue_family_properties = {
+      compute_queue};
+  std::vector<vk::Bool32> presentation_support = {VK_FALSE};
+
+  EXPECT_EQ(vka::find_graphics_and_presentation_queue_family_index(
+                queue_family_properties, presentation_support),
+            UINT32_MAX);
+}
+
+TEST(TriangleExample, ReturnsUINT32MaxValueGivenInputVectorsHaveDifferentSize) {
+  vk::QueueFamilyProperties graphics_queue;
+  graphics_queue.queueFlags = vk::QueueFlagBits::eGraphics;
+
+  std::vector<vk::QueueFamilyProperties> queue_family_properties = {
+      graphics_queue};
+  std::vector<vk::Bool32> presentation_support = {VK_TRUE, VK_FALSE};
+
+  EXPECT_EQ(vka::find_graphics_and_presentation_queue_family_index(
+                queue_family_properties, presentation_support),
+            UINT32_MAX);
 }
