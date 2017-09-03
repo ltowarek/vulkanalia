@@ -65,6 +65,19 @@ vk::UniqueDevice VulkanCache::device_ = vk::UniqueDevice();
 const uint32_t VulkanCache::queue_index_ = 0;
 vk::UniqueCommandPool VulkanCache::command_pool_ = vk::UniqueCommandPool();
 
+TEST(WindowManager,
+     ReturnsNonNullHInstanceGivenModuleHandleIsSuccessfullyRetrieved) {
+  const std::string name = "Application Name";
+  vka::WindowManager manager(name);
+  EXPECT_TRUE(manager.hInstance());
+}
+
+TEST(WindowManager, ReturnsNonNullHWndGivenWindowIsSuccessfullyCreated) {
+  const std::string name = "Application Name";
+  vka::WindowManager manager(name);
+  EXPECT_TRUE(manager.hWnd());
+}
+
 TEST(TriangleExample, CreatesInstanceWithoutThrowingException) {
   vk::ApplicationInfo application_info =
       vka::create_application_info("Test", {1, 2, 3});
@@ -120,25 +133,8 @@ TEST(TriangleExample, CreatesCommandBuffersWithoutThrowingException) {
                                               VulkanCache::command_pool()));
 }
 
-TEST(TriangleExample,
-     ReturnsNonZeroValueGivenWindowClassIsSuccessfullyRegistered) {
-  HINSTANCE hInstance = GetModuleHandle(nullptr);
-  const std::string class_name = "class_name";
-  EXPECT_TRUE(vka::register_window_class(hInstance, class_name));
-}
-
-TEST(TriangleExample, ReturnsNonNULLHandleGivenWindowIsSuccessfullyCreated) {
-  HINSTANCE hInstance = GetModuleHandle(nullptr);
-  const std::string class_name = "class_name";
-  vka::register_window_class(hInstance, class_name);
-  EXPECT_TRUE(vka::create_window(hInstance, class_name));
-}
-
 TEST(TriangleExample, CreatesSurfaceWithoutThrowingException) {
-  HINSTANCE hInstance = GetModuleHandle(nullptr);
-  const std::string class_name = "class_name";
-  vka::register_window_class(hInstance, class_name);
-  HWND hWnd = vka::create_window(hInstance, class_name);
-  EXPECT_NO_THROW(
-      vka::create_surface(VulkanCache::instance(), hInstance, hWnd));
+  vka::WindowManager manager("Application Name");
+  EXPECT_NO_THROW(vka::create_surface(VulkanCache::instance(),
+                                      manager.hInstance(), manager.hWnd()));
 }

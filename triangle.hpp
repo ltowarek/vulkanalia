@@ -23,6 +23,21 @@
 #include <vulkan/vulkan.hpp>
 
 namespace vka {
+class WindowManager {
+public:
+  WindowManager(const std::string &name);
+  ~WindowManager();
+  HINSTANCE hInstance() const;
+  HWND hWnd() const;
+
+private:
+  HINSTANCE hInstance_;
+  HWND hWnd_;
+  const std::string class_name_;
+  ATOM register_window_class(HINSTANCE hInstance,
+                             const std::string &class_name);
+  HWND create_window(HINSTANCE hInstance, const std::string &class_name);
+};
 struct Version {
   uint32_t major;
   uint32_t minor;
@@ -42,8 +57,6 @@ vk::UniqueCommandPool create_command_pool(const vk::Device &device,
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool);
-ATOM register_window_class(HINSTANCE hInstance, const std::string &class_name);
-HWND create_window(HINSTANCE hInstance, const std::string &class_name);
 vk::UniqueSurfaceKHR create_surface(const vk::Instance &instance,
                                     HINSTANCE hInstance, HWND hWnd);
 }

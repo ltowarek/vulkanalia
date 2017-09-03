@@ -17,6 +17,57 @@
 #include "triangle.hpp"
 
 namespace vka {
+WindowManager::WindowManager(const std::string &name) : class_name_(name) {
+  hInstance_ = GetModuleHandle(nullptr);
+  register_window_class(hInstance_, class_name_.c_str());
+  hWnd_ = create_window(hInstance_, class_name_.c_str());
+}
+WindowManager::~WindowManager() {
+  DestroyWindow(hWnd_);
+  UnregisterClass(class_name_.c_str(), hInstance_);
+}
+HINSTANCE WindowManager::hInstance() const { return hInstance_; }
+HWND WindowManager::hWnd() const { return hWnd_; }
+LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  switch (uMsg) {
+  case WM_CLOSE:
+    DestroyWindow(hWnd);
+    PostQuitMessage(0);
+    break;
+  default:
+    break;
+  }
+  return (DefWindowProc(hWnd, uMsg, wParam, lParam));
+}
+ATOM WindowManager::register_window_class(HINSTANCE hInstance,
+                                          const std::string &class_name) {
+  WNDCLASSEX wcx;
+  wcx.cbSize = sizeof(WNDCLASSEX);
+  wcx.style = CS_HREDRAW | CS_VREDRAW;
+  wcx.lpfnWndProc = WndProc;
+  wcx.cbClsExtra = 0;
+  wcx.cbWndExtra = 0;
+  wcx.hInstance = hInstance;
+  wcx.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+  wcx.hCursor = LoadCursor(nullptr, IDC_ARROW);
+  wcx.hbrBackground = static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
+  wcx.lpszMenuName = nullptr;
+  wcx.lpszClassName = class_name.c_str();
+  wcx.hIconSm = LoadIcon(nullptr, IDI_WINLOGO);
+  return RegisterClassEx(&wcx);
+}
+HWND WindowManager::create_window(HINSTANCE hInstance,
+                                  const std::string &class_name) {
+  LONG window_width = 500;
+  LONG window_height = 500;
+  RECT window_rect = {0, 0, window_width, window_height};
+  AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, FALSE);
+  return CreateWindowEx(0, class_name.c_str(), class_name.c_str(),
+                        WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_SYSMENU, 0, 0,
+                        window_rect.right - window_rect.left,
+                        window_rect.bottom - window_rect.top, nullptr, nullptr,
+                        hInstance, nullptr);
+}
 vk::ApplicationInfo create_application_info(const std::string name,
                                             const Version version) {
   vk::ApplicationInfo info;
@@ -87,44 +138,6 @@ create_command_buffers(const vk::Device &device,
   info.commandBufferCount = 1;
   info.level = vk::CommandBufferLevel::ePrimary;
   return device.allocateCommandBuffersUnique(info);
-}
-LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-  switch (uMsg) {
-  case WM_CLOSE:
-    DestroyWindow(hWnd);
-    PostQuitMessage(0);
-    break;
-  default:
-    break;
-  }
-  return (DefWindowProc(hWnd, uMsg, wParam, lParam));
-}
-ATOM register_window_class(HINSTANCE hInstance, const std::string &class_name) {
-  WNDCLASSEX wcx;
-  wcx.cbSize = sizeof(WNDCLASSEX);
-  wcx.style = CS_HREDRAW | CS_VREDRAW;
-  wcx.lpfnWndProc = WndProc;
-  wcx.cbClsExtra = 0;
-  wcx.cbWndExtra = 0;
-  wcx.hInstance = hInstance;
-  wcx.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-  wcx.hCursor = LoadCursor(nullptr, IDC_ARROW);
-  wcx.hbrBackground = static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
-  wcx.lpszMenuName = nullptr;
-  wcx.lpszClassName = class_name.c_str();
-  wcx.hIconSm = LoadIcon(nullptr, IDI_WINLOGO);
-  return RegisterClassEx(&wcx);
-}
-HWND create_window(HINSTANCE hInstance, const std::string &class_name) {
-  LONG window_width = 500;
-  LONG window_height = 500;
-  RECT window_rect = {0, 0, window_width, window_height};
-  AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, FALSE);
-  return CreateWindowEx(0, class_name.c_str(), class_name.c_str(),
-                        WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_SYSMENU, 0, 0,
-                        window_rect.right - window_rect.left,
-                        window_rect.bottom - window_rect.top, nullptr, nullptr,
-                        hInstance, nullptr);
 }
 vk::UniqueSurfaceKHR create_surface(const vk::Instance &instance,
                                     HINSTANCE hInstance, HWND hWnd) {
