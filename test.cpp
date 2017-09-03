@@ -17,29 +17,63 @@
 #include "triangle.hpp"
 #include "gtest/gtest.h"
 
+class VulkanCache {
+public:
+  static const vk::Instance &instance() {
+    if (instance_) {
+      return *instance_;
+    } else {
+      vk::ApplicationInfo application_info =
+          vka::create_application_info("Test", {1, 2, 3});
+      instance_ = vka::create_instance(application_info);
+      return *instance_;
+    }
+  }
+  static const vk::Device &device() {
+    if (device_) {
+      return *device_;
+    } else {
+      const std::vector<vk::PhysicalDevice> devices =
+          instance().enumeratePhysicalDevices();
+      const vk::PhysicalDevice physical_device =
+          vka::select_physical_device(devices);
+      const std::vector<vk::QueueFamilyProperties> queues =
+          physical_device.getQueueFamilyProperties();
+      device_ = vka::create_device(physical_device, queue_index_);
+      return *device_;
+    }
+  }
+  static const uint32_t queue_index() { return queue_index_; }
+  static const vk::CommandPool &command_pool() {
+    if (command_pool_) {
+      return *command_pool_;
+    } else {
+      command_pool_ = vka::create_command_pool(device(), queue_index_);
+      return *command_pool_;
+    }
+  }
+
+private:
+  static vk::UniqueInstance instance_;
+  static const uint32_t queue_index_;
+  static vk::UniqueDevice device_;
+  static vk::UniqueCommandPool command_pool_;
+};
+
+vk::UniqueInstance VulkanCache::instance_ = vk::UniqueInstance();
+vk::UniqueDevice VulkanCache::device_ = vk::UniqueDevice();
+const uint32_t VulkanCache::queue_index_ = 0;
+vk::UniqueCommandPool VulkanCache::command_pool_ = vk::UniqueCommandPool();
+
 TEST(TriangleExample, CreatesInstanceWithoutThrowingException) {
   vk::ApplicationInfo application_info =
       vka::create_application_info("Test", {1, 2, 3});
   EXPECT_NO_THROW(vka::create_instance(application_info));
 }
 
-class TriangleExampleWithSharedInstance : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-    const vk::ApplicationInfo application_info =
-        vka::create_application_info("Test", {1, 2, 3});
-    instance_ = vka::create_instance(application_info);
-  }
-  static vk::UniqueInstance instance_;
-};
-
-vk::UniqueInstance TriangleExampleWithSharedInstance::instance_ =
-    vk::UniqueInstance();
-
-TEST_F(TriangleExampleWithSharedInstance,
-       SelectsNonEmptyPhysicalDeviceIfAnyIsAvailable) {
+TEST(TriangleExample, SelectsNonEmptyPhysicalDeviceIfAnyIsAvailable) {
   std::vector<vk::PhysicalDevice> devices =
-      instance_.get().enumeratePhysicalDevices();
+      VulkanCache::instance().enumeratePhysicalDevices();
   EXPECT_NE(vka::select_physical_device(devices), vk::PhysicalDevice());
 }
 
@@ -65,10 +99,9 @@ TEST(TriangleExample,
             UINT32_MAX);
 }
 
-TEST_F(TriangleExampleWithSharedInstance,
-       CreatesLogicalDeviceWithoutThrowingException) {
+TEST(TriangleExample, CreatesLogicalDeviceWithoutThrowingException) {
   const std::vector<vk::PhysicalDevice> devices =
-      instance_.get().enumeratePhysicalDevices();
+      VulkanCache::instance().enumeratePhysicalDevices();
   const vk::PhysicalDevice physical_device =
       vka::select_physical_device(devices);
   const std::vector<vk::QueueFamilyProperties> queues =
@@ -77,46 +110,14 @@ TEST_F(TriangleExampleWithSharedInstance,
   EXPECT_NO_THROW(vka::create_device(physical_device, queue_index));
 }
 
-class TriangleExampleWithSharedDevice
-    : public TriangleExampleWithSharedInstance {
-protected:
-  static void SetUpTestCase() {
-    const std::vector<vk::PhysicalDevice> devices =
-        instance_.get().enumeratePhysicalDevices();
-    const vk::PhysicalDevice physical_device =
-        vka::select_physical_device(devices);
-    const std::vector<vk::QueueFamilyProperties> queues =
-        physical_device.getQueueFamilyProperties();
-    device_ = vka::create_device(physical_device, queue_index_);
-  }
-  static vk::UniqueDevice device_;
-  static const uint32_t queue_index_;
-};
-
-vk::UniqueDevice TriangleExampleWithSharedDevice::device_ = vk::UniqueDevice();
-const uint32_t TriangleExampleWithSharedDevice::queue_index_ = 0;
-
-TEST_F(TriangleExampleWithSharedDevice,
-       CreatesCommandPoolWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::create_command_pool(device_.get(), queue_index_));
+TEST(TriangleExample, CreatesCommandPoolWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_command_pool(VulkanCache::device(),
+                                           VulkanCache::queue_index()));
 }
 
-class TriangleExampleWithSharedCommandPool
-    : public TriangleExampleWithSharedDevice {
-protected:
-  static void SetUpTestCase() {
-    command_pool_ = vka::create_command_pool(device_.get(), queue_index_);
-  }
-  static vk::UniqueCommandPool command_pool_;
-};
-
-vk::UniqueCommandPool TriangleExampleWithSharedCommandPool::command_pool_ =
-    vk::UniqueCommandPool();
-
-TEST_F(TriangleExampleWithSharedCommandPool,
-       CreatesCommandBuffersWithoutThrowingException) {
-  EXPECT_NO_THROW(
-      vka::create_command_buffers(device_.get(), command_pool_.get()));
+TEST(TriangleExample, CreatesCommandBuffersWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_command_buffers(VulkanCache::device(),
+                                              VulkanCache::command_pool()));
 }
 
 TEST(TriangleExample,
@@ -133,11 +134,11 @@ TEST(TriangleExample, ReturnsNonNULLHandleGivenWindowIsSuccessfullyCreated) {
   EXPECT_TRUE(vka::create_window(hInstance, class_name));
 }
 
-TEST_F(TriangleExampleWithSharedInstance,
-       CreatesSurfaceWithoutThrowingException) {
+TEST(TriangleExample, CreatesSurfaceWithoutThrowingException) {
   HINSTANCE hInstance = GetModuleHandle(nullptr);
   const std::string class_name = "class_name";
   vka::register_window_class(hInstance, class_name);
   HWND hWnd = vka::create_window(hInstance, class_name);
-  EXPECT_NO_THROW(vka::create_surface(instance_.get(), hInstance, hWnd));
+  EXPECT_NO_THROW(
+      vka::create_surface(VulkanCache::instance(), hInstance, hWnd));
 }
