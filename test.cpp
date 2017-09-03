@@ -56,7 +56,7 @@ public:
     if (surface_) {
       return *surface_;
     } else {
-      vka::WindowManager manager("Application Name");
+      static vka::WindowManager manager("Application Name");
       surface_ = vka::create_surface(VulkanCache::instance(),
                                      manager.hInstance(), manager.hWnd());
       return *surface_;
@@ -263,19 +263,21 @@ TEST(TriangleExample, ReturnsUINT32MaxValueGivenInputVectorsHaveDifferentSize) {
             UINT32_MAX);
 }
 
-TEST(TriangleExample,
-     SelectsB8G8R8A8UnormColorFormatGivenThereAreNoPreferedFormat) {
+TEST(
+    TriangleExample,
+    SelectsB8G8R8A8UnormColorFormatAndSRGBNonlinearColorSpaceGivenThereAreNoPreferedFormat) {
   std::vector<vk::SurfaceFormatKHR> formats = {
       {vk::Format::eUndefined, vk::ColorSpaceKHR::eAdobergbLinearEXT}};
-  EXPECT_EQ(vka::select_surface_color_format(formats),
-            vk::Format::eB8G8R8A8Unorm);
+  vk::SurfaceFormatKHR expected_format = {vk::Format::eB8G8R8A8Unorm,
+                                          vk::ColorSpaceKHR::eSrgbNonlinear};
+  EXPECT_EQ(vka::select_surface_format(formats), expected_format);
 }
 
-TEST(TriangleExample, SelectsFirstColorFormatGivenThereArePreferedFormats) {
+TEST(TriangleExample, SelectsFirstSurfaceFormatGivenThereArePreferedFormats) {
   std::vector<vk::SurfaceFormatKHR> formats = {
       {vk::Format::eA1R5G5B5UnormPack16, vk::ColorSpaceKHR::eAdobergbLinearEXT},
       {vk::Format::eAstc10x5SrgbBlock, vk::ColorSpaceKHR::eBt709LinearEXT}};
-  EXPECT_EQ(vka::select_surface_color_format(formats), formats[0].format);
+  EXPECT_EQ(vka::select_surface_format(formats), formats[0]);
 }
 
 TEST(TriangleExample,
@@ -317,4 +319,9 @@ TEST(TriangleExample,
   uint32_t old_height = height;
   vka::select_swapchain_extent(capabilities, width, height);
   EXPECT_EQ(vk::Extent2D(width, height), vk::Extent2D(old_width, old_height));
+}
+
+TEST(TriangleExample, CreatesSwapchainWithoutThrowingException) {
+  vka::create_swapchain(VulkanCache::physical_device(), VulkanCache::device(),
+                        VulkanCache::surface());
 }

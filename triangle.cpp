@@ -171,12 +171,12 @@ uint32_t find_graphics_and_presentation_queue_family_index(
   }
   return UINT32_MAX;
 }
-vk::Format
-select_surface_color_format(const std::vector<vk::SurfaceFormatKHR> &formats) {
+vk::SurfaceFormatKHR
+select_surface_format(const std::vector<vk::SurfaceFormatKHR> &formats) {
   if (formats.size() == 1 && formats[0].format == vk::Format::eUndefined) {
-    return vk::Format::eB8G8R8A8Unorm;
+    return {vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
   } else {
-    return formats[0].format;
+    return formats[0];
   }
 }
 vk::Extent2D
@@ -191,5 +191,35 @@ select_swapchain_extent(const vk::SurfaceCapabilitiesKHR &capabilities,
     height = extent.height;
   }
   return extent;
+}
+vk::UniqueSwapchainKHR
+create_swapchain(const vk::PhysicalDevice &physical_device,
+                 const vk::Device &device, const vk::SurfaceKHR &surface) {
+  vk::SurfaceCapabilitiesKHR capabilities =
+      physical_device.getSurfaceCapabilitiesKHR(surface);
+  std::vector<vk::SurfaceFormatKHR> formats =
+      physical_device.getSurfaceFormatsKHR(surface);
+  vk::SurfaceFormatKHR format = select_surface_format(formats);
+  uint32_t width = 500;
+  uint32_t height = 500;
+  vk::Extent2D extent = select_swapchain_extent(capabilities, width, height);
+
+  vk::SwapchainCreateInfoKHR info;
+  info.surface = surface;
+  info.minImageCount = capabilities.minImageCount;
+  info.imageFormat = format.format;
+  info.imageColorSpace = format.colorSpace;
+  info.imageExtent = extent;
+  info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+  info.preTransform = capabilities.currentTransform;
+  info.imageArrayLayers = 1;
+  info.imageSharingMode = vk::SharingMode::eExclusive;
+  info.queueFamilyIndexCount = 0;
+  info.pQueueFamilyIndices = nullptr;
+  info.presentMode = vk::PresentModeKHR::eFifo;
+  info.oldSwapchain = nullptr;
+  info.clipped = VK_TRUE;
+  info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+  return device.createSwapchainKHRUnique(info);
 }
 }

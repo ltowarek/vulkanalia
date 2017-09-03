@@ -66,11 +66,14 @@ get_presentation_support(const vk::PhysicalDevice &physical_device,
 uint32_t find_graphics_and_presentation_queue_family_index(
     const std::vector<vk::QueueFamilyProperties> &queue_properties,
     const std::vector<vk::Bool32> &presentation_support);
-vk::Format
-select_surface_color_format(const std::vector<vk::SurfaceFormatKHR> &formats);
+vk::SurfaceFormatKHR
+select_surface_format(const std::vector<vk::SurfaceFormatKHR> &formats);
 vk::Extent2D
 select_swapchain_extent(const vk::SurfaceCapabilitiesKHR &capabilities,
                         uint32_t &width, uint32_t &height);
+vk::UniqueSwapchainKHR
+create_swapchain(const vk::PhysicalDevice &physical_device,
+                 const vk::Device &device, const vk::SurfaceKHR &surface);
 }
 
 #endif
