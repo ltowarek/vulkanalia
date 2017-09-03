@@ -66,6 +66,8 @@ get_presentation_support(const vk::PhysicalDevice &physical_device,
 uint32_t find_graphics_and_presentation_queue_family_index(
     const std::vector<vk::QueueFamilyProperties> &queue_properties,
     const std::vector<vk::Bool32> &presentation_support);
+vk::Format
+select_surface_color_format(const std::vector<vk::SurfaceFormatKHR> &formats);
 }
 
 #endif

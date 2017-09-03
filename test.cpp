@@ -262,3 +262,18 @@ TEST(TriangleExample, ReturnsUINT32MaxValueGivenInputVectorsHaveDifferentSize) {
                 queue_family_properties, presentation_support),
             UINT32_MAX);
 }
+
+TEST(TriangleExample,
+     SelectsB8G8R8A8UnormColorFormatGivenThereAreNoPreferedFormat) {
+  std::vector<vk::SurfaceFormatKHR> formats = {
+      {vk::Format::eUndefined, vk::ColorSpaceKHR::eAdobergbLinearEXT}};
+  EXPECT_EQ(vka::select_surface_color_format(formats),
+            vk::Format::eB8G8R8A8Unorm);
+}
+
+TEST(TriangleExample, SelectsFirstColorFormatGivenThereArePreferedFormats) {
+  std::vector<vk::SurfaceFormatKHR> formats = {
+      {vk::Format::eA1R5G5B5UnormPack16, vk::ColorSpaceKHR::eAdobergbLinearEXT},
+      {vk::Format::eAstc10x5SrgbBlock, vk::ColorSpaceKHR::eBt709LinearEXT}};
+  EXPECT_EQ(vka::select_surface_color_format(formats), formats[0].format);
+}

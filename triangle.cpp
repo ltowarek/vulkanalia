@@ -171,4 +171,12 @@ uint32_t find_graphics_and_presentation_queue_family_index(
   }
   return UINT32_MAX;
 }
+vk::Format
+select_surface_color_format(const std::vector<vk::SurfaceFormatKHR> &formats) {
+  if (formats.size() == 1 && formats[0].format == vk::Format::eUndefined) {
+    return vk::Format::eB8G8R8A8Unorm;
+  } else {
+    return formats[0].format;
+  }
+}
 }
