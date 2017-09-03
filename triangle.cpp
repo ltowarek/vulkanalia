@@ -179,4 +179,17 @@ select_surface_color_format(const std::vector<vk::SurfaceFormatKHR> &formats) {
     return formats[0].format;
   }
 }
+vk::Extent2D
+select_swapchain_extent(const vk::SurfaceCapabilitiesKHR &capabilities,
+                        uint32_t &width, uint32_t &height) {
+  vk::Extent2D extent = capabilities.currentExtent;
+  if (extent.width == UINT32_MAX) {
+    extent.width = width;
+    extent.height = height;
+  } else {
+    width = extent.width;
+    height = extent.height;
+  }
+  return extent;
+}
 }

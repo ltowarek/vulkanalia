@@ -277,3 +277,44 @@ TEST(TriangleExample, SelectsFirstColorFormatGivenThereArePreferedFormats) {
       {vk::Format::eAstc10x5SrgbBlock, vk::ColorSpaceKHR::eBt709LinearEXT}};
   EXPECT_EQ(vka::select_surface_color_format(formats), formats[0].format);
 }
+
+TEST(TriangleExample,
+     ReturnsSwapchainExtentEqualToSurfaceCapabilitiesGivenCurrentExtentIsSet) {
+  vk::SurfaceCapabilitiesKHR capabilities = {};
+  capabilities.currentExtent = vk::Extent2D(1, 2);
+  uint32_t width = 0;
+  uint32_t height = 0;
+  EXPECT_EQ(vka::select_swapchain_extent(capabilities, width, height),
+            capabilities.currentExtent);
+}
+
+TEST(TriangleExample, SetsWidthAndHeightGivenCurrentExtentIsSet) {
+  vk::SurfaceCapabilitiesKHR capabilities = {};
+  capabilities.currentExtent = vk::Extent2D(1, 2);
+  uint32_t width = 0;
+  uint32_t height = 0;
+  vka::select_swapchain_extent(capabilities, width, height);
+  EXPECT_EQ(vk::Extent2D(width, height), capabilities.currentExtent);
+}
+
+TEST(TriangleExample,
+     ReturnsSwapchainExtentEqualToWidthAndHeightGivenCurrentExtentIsUndefined) {
+  vk::SurfaceCapabilitiesKHR capabilities = {};
+  capabilities.currentExtent = vk::Extent2D(UINT32_MAX, UINT32_MAX);
+  uint32_t width = 1;
+  uint32_t height = 2;
+  EXPECT_EQ(vka::select_swapchain_extent(capabilities, width, height),
+            vk::Extent2D(width, height));
+}
+
+TEST(TriangleExample,
+     LeavesWidthAndHeightUnchangedGivenCurrentExtentIsUndefined) {
+  vk::SurfaceCapabilitiesKHR capabilities = {};
+  capabilities.currentExtent = vk::Extent2D(UINT32_MAX, UINT32_MAX);
+  uint32_t width = 1;
+  uint32_t old_width = width;
+  uint32_t height = 2;
+  uint32_t old_height = height;
+  vka::select_swapchain_extent(capabilities, width, height);
+  EXPECT_EQ(vk::Extent2D(width, height), vk::Extent2D(old_width, old_height));
+}
