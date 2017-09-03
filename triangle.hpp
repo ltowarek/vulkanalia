@@ -59,6 +59,10 @@ create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool);
 vk::UniqueSurfaceKHR create_surface(const vk::Instance &instance,
                                     HINSTANCE hInstance, HWND hWnd);
+std::vector<vk::Bool32>
+get_presentation_support(const vk::PhysicalDevice &physical_device,
+                         const vk::SurfaceKHR &surface,
+                         const size_t queue_family_count);
 }
 
 #endif

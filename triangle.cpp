@@ -146,4 +146,15 @@ vk::UniqueSurfaceKHR create_surface(const vk::Instance &instance,
   info.hwnd = hWnd;
   return instance.createWin32SurfaceKHRUnique(info);
 }
+std::vector<vk::Bool32>
+get_presentation_support(const vk::PhysicalDevice &physical_device,
+                         const vk::SurfaceKHR &surface,
+                         const size_t queue_family_count) {
+  std::vector<vk::Bool32> presentation_support(queue_family_count);
+  for (size_t i = 0; i < queue_family_count; ++i) {
+    presentation_support[i] =
+        physical_device.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface);
+  }
+  return presentation_support;
+}
 }

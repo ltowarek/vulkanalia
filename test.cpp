@@ -52,18 +52,54 @@ public:
       return *command_pool_;
     }
   }
+  static const vk::SurfaceKHR &surface() {
+    if (surface_) {
+      return *surface_;
+    } else {
+      vka::WindowManager manager("Application Name");
+      surface_ = vka::create_surface(VulkanCache::instance(),
+                                     manager.hInstance(), manager.hWnd());
+      return *surface_;
+    }
+  }
+  static const vk::PhysicalDevice &physical_device() {
+    if (physical_device_) {
+      return physical_device_;
+    } else {
+      const std::vector<vk::PhysicalDevice> devices =
+          instance().enumeratePhysicalDevices();
+      physical_device_ = vka::select_physical_device(devices);
+      return physical_device_;
+    }
+  }
+  static const std::vector<vk::QueueFamilyProperties> &
+  queue_family_properties() {
+    if (!queue_family_properties_.empty()) {
+      return queue_family_properties_;
+    } else {
+      queue_family_properties_ = physical_device().getQueueFamilyProperties();
+      return queue_family_properties_;
+    }
+  }
 
 private:
   static vk::UniqueInstance instance_;
   static const uint32_t queue_index_;
   static vk::UniqueDevice device_;
   static vk::UniqueCommandPool command_pool_;
+  static vk::UniqueSurfaceKHR surface_;
+  static vk::PhysicalDevice physical_device_;
+  static std::vector<vk::QueueFamilyProperties> queue_family_properties_;
 };
 
 vk::UniqueInstance VulkanCache::instance_ = vk::UniqueInstance();
 vk::UniqueDevice VulkanCache::device_ = vk::UniqueDevice();
 const uint32_t VulkanCache::queue_index_ = 0;
 vk::UniqueCommandPool VulkanCache::command_pool_ = vk::UniqueCommandPool();
+vk::UniqueSurfaceKHR VulkanCache::surface_ = vk::UniqueSurfaceKHR();
+vk::PhysicalDevice VulkanCache::physical_device_ = vk::PhysicalDevice();
+std::vector<vk::QueueFamilyProperties> VulkanCache::queue_family_properties_ =
+    std::vector<vk::QueueFamilyProperties>();
 
 TEST(WindowManager,
      ReturnsNonNullHInstanceGivenModuleHandleIsSuccessfullyRetrieved) {
@@ -137,4 +173,13 @@ TEST(TriangleExample, CreatesSurfaceWithoutThrowingException) {
   vka::WindowManager manager("Application Name");
   EXPECT_NO_THROW(vka::create_surface(VulkanCache::instance(),
                                       manager.hInstance(), manager.hWnd()));
+}
+
+TEST(TriangleExample,
+     ReturnsVectorWithPresentationSupportForEachAvailableQueueFamily) {
+  std::vector<vk::Bool32> presentation_support = vka::get_presentation_support(
+      VulkanCache::physical_device(), VulkanCache::surface(),
+      VulkanCache::queue_family_properties().size());
+  EXPECT_EQ(presentation_support.size(),
+            VulkanCache::queue_family_properties().size());
 }
