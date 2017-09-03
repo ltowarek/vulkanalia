@@ -115,4 +115,15 @@ ATOM register_window_class(HINSTANCE hInstance, const std::string &class_name) {
   wcx.hIconSm = LoadIcon(nullptr, IDI_WINLOGO);
   return RegisterClassEx(&wcx);
 }
+HWND create_window(HINSTANCE hInstance, const std::string &class_name) {
+  LONG window_width = 500;
+  LONG window_height = 500;
+  RECT window_rect = {0, 0, window_width, window_height};
+  AdjustWindowRect(&window_rect, WS_OVERLAPPEDWINDOW, FALSE);
+  return CreateWindowEx(0, class_name.c_str(), class_name.c_str(),
+                        WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_SYSMENU, 0, 0,
+                        window_rect.right - window_rect.left,
+                        window_rect.bottom - window_rect.top, nullptr, nullptr,
+                        hInstance, nullptr);
+}
 }

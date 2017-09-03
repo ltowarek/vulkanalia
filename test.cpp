@@ -119,8 +119,16 @@ TEST_F(TriangleExampleWithSharedCommandPool,
       vka::create_command_buffers(device_.get(), command_pool_.get()));
 }
 
-TEST(TriangleExample, ReturnsNonNULLGivenWindowsClassIsSuccessfullyRegistered) {
+TEST(TriangleExample,
+     ReturnsNonZeroValueGivenWindowClassIsSuccessfullyRegistered) {
   HINSTANCE hInstance = GetModuleHandle(nullptr);
   const std::string class_name = "class_name";
   EXPECT_TRUE(vka::register_window_class(hInstance, class_name));
+}
+
+TEST(TriangleExample, ReturnsNonNULLHandleGivenWindowIsSuccessfullyCreated) {
+  HINSTANCE hInstance = GetModuleHandle(nullptr);
+  const std::string class_name = "class_name";
+  vka::register_window_class(hInstance, class_name);
+  EXPECT_TRUE(vka::create_window(hInstance, class_name));
 }
