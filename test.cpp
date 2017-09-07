@@ -81,6 +81,25 @@ public:
       return queue_family_properties_;
     }
   }
+  static const vk::SwapchainKHR &swapchain() {
+    if (swapchain_) {
+      return *swapchain_;
+    } else {
+      const vk::SurfaceKHR surface = VulkanCache::surface();
+      const vk::SurfaceCapabilitiesKHR capabilities =
+          physical_device().getSurfaceCapabilitiesKHR(surface);
+      const std::vector<vk::SurfaceFormatKHR> formats =
+          physical_device().getSurfaceFormatsKHR(surface);
+      const vk::SurfaceFormatKHR format = vka::select_surface_format(formats);
+      uint32_t width = 500;
+      uint32_t height = 500;
+      const vk::Extent2D extent =
+          vka::select_swapchain_extent(capabilities, width, height);
+      swapchain_ = vka::create_swapchain(format, extent, capabilities, device(),
+                                         surface);
+      return *swapchain_;
+    }
+  }
 
 private:
   static vk::UniqueInstance instance_;
@@ -90,6 +109,7 @@ private:
   static vk::UniqueSurfaceKHR surface_;
   static vk::PhysicalDevice physical_device_;
   static std::vector<vk::QueueFamilyProperties> queue_family_properties_;
+  static vk::UniqueSwapchainKHR swapchain_;
 };
 
 vk::UniqueInstance VulkanCache::instance_ = vk::UniqueInstance();
@@ -100,6 +120,7 @@ vk::UniqueSurfaceKHR VulkanCache::surface_ = vk::UniqueSurfaceKHR();
 vk::PhysicalDevice VulkanCache::physical_device_ = vk::PhysicalDevice();
 std::vector<vk::QueueFamilyProperties> VulkanCache::queue_family_properties_ =
     std::vector<vk::QueueFamilyProperties>();
+vk::UniqueSwapchainKHR VulkanCache::swapchain_ = vk::UniqueSwapchainKHR();
 
 TEST(WindowManager,
      ReturnsNonNullHInstanceGivenModuleHandleIsSuccessfullyRetrieved) {
@@ -322,6 +343,16 @@ TEST(TriangleExample,
 }
 
 TEST(TriangleExample, CreatesSwapchainWithoutThrowingException) {
-  vka::create_swapchain(VulkanCache::physical_device(), VulkanCache::device(),
-                        VulkanCache::surface());
+  const vk::SurfaceKHR surface = VulkanCache::surface();
+  const vk::SurfaceCapabilitiesKHR capabilities =
+      VulkanCache::physical_device().getSurfaceCapabilitiesKHR(surface);
+  const std::vector<vk::SurfaceFormatKHR> formats =
+      VulkanCache::physical_device().getSurfaceFormatsKHR(surface);
+  const vk::SurfaceFormatKHR format = vka::select_surface_format(formats);
+  uint32_t width = 500;
+  uint32_t height = 500;
+  const vk::Extent2D extent =
+      vka::select_swapchain_extent(capabilities, width, height);
+  EXPECT_NO_THROW(vka::create_swapchain(format, extent, capabilities,
+                                        VulkanCache::device(), surface));
 }

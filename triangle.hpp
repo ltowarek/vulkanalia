@@ -72,7 +72,9 @@ vk::Extent2D
 select_swapchain_extent(const vk::SurfaceCapabilitiesKHR &capabilities,
                         uint32_t &width, uint32_t &height);
 vk::UniqueSwapchainKHR
-create_swapchain(const vk::PhysicalDevice &physical_device,
+create_swapchain(const vk::SurfaceFormatKHR &surface_format,
+                 const vk::Extent2D &extent,
+                 const vk::SurfaceCapabilitiesKHR &capabilities,
                  const vk::Device &device, const vk::SurfaceKHR &surface);
 }
 

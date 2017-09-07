@@ -193,22 +193,15 @@ select_swapchain_extent(const vk::SurfaceCapabilitiesKHR &capabilities,
   return extent;
 }
 vk::UniqueSwapchainKHR
-create_swapchain(const vk::PhysicalDevice &physical_device,
+create_swapchain(const vk::SurfaceFormatKHR &surface_format,
+                 const vk::Extent2D &extent,
+                 const vk::SurfaceCapabilitiesKHR &capabilities,
                  const vk::Device &device, const vk::SurfaceKHR &surface) {
-  vk::SurfaceCapabilitiesKHR capabilities =
-      physical_device.getSurfaceCapabilitiesKHR(surface);
-  std::vector<vk::SurfaceFormatKHR> formats =
-      physical_device.getSurfaceFormatsKHR(surface);
-  vk::SurfaceFormatKHR format = select_surface_format(formats);
-  uint32_t width = 500;
-  uint32_t height = 500;
-  vk::Extent2D extent = select_swapchain_extent(capabilities, width, height);
-
   vk::SwapchainCreateInfoKHR info;
   info.surface = surface;
   info.minImageCount = capabilities.minImageCount;
-  info.imageFormat = format.format;
-  info.imageColorSpace = format.colorSpace;
+  info.imageFormat = surface_format.format;
+  info.imageColorSpace = surface_format.colorSpace;
   info.imageExtent = extent;
   info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
   info.preTransform = capabilities.currentTransform;
