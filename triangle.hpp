@@ -76,6 +76,9 @@ create_swapchain(const vk::SurfaceFormatKHR &surface_format,
                  const vk::Extent2D &extent,
                  const vk::SurfaceCapabilitiesKHR &capabilities,
                  const vk::Device &device, const vk::SurfaceKHR &surface);
+std::vector<vk::UniqueImageView>
+create_swapchain_image_views(const vk::Device &device,
+                             const std::vector<vk::Image> images,
+                             const vk::SurfaceFormatKHR &surface_format);
 }
-
 #endif

@@ -59,6 +59,10 @@ public:
       static vka::WindowManager manager("Application Name");
       surface_ = vka::create_surface(VulkanCache::instance(),
                                      manager.hInstance(), manager.hWnd());
+      std::vector<vk::Bool32> presentation_support =
+          vka::get_presentation_support(
+              VulkanCache::physical_device(), *surface_,
+              VulkanCache::queue_family_properties().size());
       return *surface_;
     }
   }
@@ -81,6 +85,12 @@ public:
       return queue_family_properties_;
     }
   }
+  static const vk::SurfaceFormatKHR surface_format() {
+    const vk::SurfaceKHR surface = VulkanCache::surface();
+    const std::vector<vk::SurfaceFormatKHR> formats =
+        physical_device().getSurfaceFormatsKHR(surface);
+    return vka::select_surface_format(formats);
+  }
   static const vk::SwapchainKHR &swapchain() {
     if (swapchain_) {
       return *swapchain_;
@@ -88,15 +98,12 @@ public:
       const vk::SurfaceKHR surface = VulkanCache::surface();
       const vk::SurfaceCapabilitiesKHR capabilities =
           physical_device().getSurfaceCapabilitiesKHR(surface);
-      const std::vector<vk::SurfaceFormatKHR> formats =
-          physical_device().getSurfaceFormatsKHR(surface);
-      const vk::SurfaceFormatKHR format = vka::select_surface_format(formats);
       uint32_t width = 500;
       uint32_t height = 500;
       const vk::Extent2D extent =
           vka::select_swapchain_extent(capabilities, width, height);
-      swapchain_ = vka::create_swapchain(format, extent, capabilities, device(),
-                                         surface);
+      swapchain_ = vka::create_swapchain(surface_format(), extent, capabilities,
+                                         device(), surface);
       return *swapchain_;
     }
   }
@@ -343,16 +350,29 @@ TEST(TriangleExample,
 }
 
 TEST(TriangleExample, CreatesSwapchainWithoutThrowingException) {
-  const vk::SurfaceKHR surface = VulkanCache::surface();
+  vka::WindowManager manager("Application Name");
+  const vk::UniqueSurfaceKHR surface = vka::create_surface(
+      VulkanCache::instance(), manager.hInstance(), manager.hWnd());
+  std::vector<vk::Bool32> presentation_support = vka::get_presentation_support(
+      VulkanCache::physical_device(), *surface,
+      VulkanCache::queue_family_properties().size());
   const vk::SurfaceCapabilitiesKHR capabilities =
-      VulkanCache::physical_device().getSurfaceCapabilitiesKHR(surface);
+      VulkanCache::physical_device().getSurfaceCapabilitiesKHR(*surface);
   const std::vector<vk::SurfaceFormatKHR> formats =
-      VulkanCache::physical_device().getSurfaceFormatsKHR(surface);
+      VulkanCache::physical_device().getSurfaceFormatsKHR(*surface);
   const vk::SurfaceFormatKHR format = vka::select_surface_format(formats);
   uint32_t width = 500;
   uint32_t height = 500;
   const vk::Extent2D extent =
       vka::select_swapchain_extent(capabilities, width, height);
   EXPECT_NO_THROW(vka::create_swapchain(format, extent, capabilities,
-                                        VulkanCache::device(), surface));
+                                        VulkanCache::device(), *surface));
+}
+
+TEST(TriangleExample, CreatesSwapchainImageViewsWithoutThrowingException) {
+  const vk::SwapchainKHR swapchain = VulkanCache::swapchain();
+  const std::vector<vk::Image> images =
+      VulkanCache::device().getSwapchainImagesKHR(swapchain);
+  EXPECT_NO_THROW(vka::create_swapchain_image_views(
+      VulkanCache::device(), images, VulkanCache::surface_format()));
 }
