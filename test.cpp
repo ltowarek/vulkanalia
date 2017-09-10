@@ -21,19 +21,15 @@
 class VulkanCache {
 public:
   static const vk::Instance &instance() {
-    if (instance_) {
-      return *instance_;
-    } else {
+    if (!instance_) {
       vk::ApplicationInfo application_info =
           vka::create_application_info("Test", {1, 2, 3});
       instance_ = vka::create_instance(application_info);
-      return *instance_;
     }
+    return *instance_;
   }
   static const vk::Device &device() {
-    if (device_) {
-      return *device_;
-    } else {
+    if (!device_) {
       const std::vector<vk::PhysicalDevice> devices =
           instance().enumeratePhysicalDevices();
       const vk::PhysicalDevice physical_device =
@@ -41,22 +37,18 @@ public:
       const std::vector<vk::QueueFamilyProperties> queues =
           physical_device.getQueueFamilyProperties();
       device_ = vka::create_device(physical_device, queue_index_);
-      return *device_;
     }
+    return *device_;
   }
   static const uint32_t queue_index() { return queue_index_; }
   static const vk::CommandPool &command_pool() {
-    if (command_pool_) {
-      return *command_pool_;
-    } else {
+    if (!command_pool_) {
       command_pool_ = vka::create_command_pool(device(), queue_index_);
-      return *command_pool_;
     }
+    return *command_pool_;
   }
   static const vk::SurfaceKHR &surface() {
-    if (surface_) {
-      return *surface_;
-    } else {
+    if (!surface_) {
       static vka::WindowManager manager("Application Name");
       surface_ = vka::create_surface(VulkanCache::instance(),
                                      manager.hInstance(), manager.hWnd());
@@ -64,27 +56,23 @@ public:
           vka::get_presentation_support(
               VulkanCache::physical_device(), *surface_,
               VulkanCache::queue_family_properties().size());
-      return *surface_;
     }
+    return *surface_;
   }
   static const vk::PhysicalDevice &physical_device() {
-    if (physical_device_) {
-      return physical_device_;
-    } else {
+    if (!physical_device_) {
       const std::vector<vk::PhysicalDevice> devices =
           instance().enumeratePhysicalDevices();
       physical_device_ = vka::select_physical_device(devices);
-      return physical_device_;
     }
+    return physical_device_;
   }
   static const std::vector<vk::QueueFamilyProperties> &
   queue_family_properties() {
-    if (!queue_family_properties_.empty()) {
-      return queue_family_properties_;
-    } else {
+    if (queue_family_properties_.empty()) {
       queue_family_properties_ = physical_device().getQueueFamilyProperties();
-      return queue_family_properties_;
     }
+    return queue_family_properties_;
   }
   static const vk::SurfaceFormatKHR surface_format() {
     const vk::SurfaceKHR surface = VulkanCache::surface();
@@ -101,9 +89,7 @@ public:
     return vka::select_swapchain_extent(capabilities, width, height);
   }
   static const vk::SwapchainKHR &swapchain() {
-    if (swapchain_) {
-      return *swapchain_;
-    } else {
+    if (!swapchain_) {
       const vk::SurfaceKHR surface = VulkanCache::surface();
       const vk::SurfaceCapabilitiesKHR capabilities =
           physical_device().getSurfaceCapabilitiesKHR(surface);
@@ -113,8 +99,8 @@ public:
           vka::select_swapchain_extent(capabilities, width, height);
       swapchain_ = vka::create_swapchain(surface_format(), extent, capabilities,
                                          device(), surface);
-      return *swapchain_;
     }
+    return *swapchain_;
   }
   static std::vector<vk::Image> swapchain_images() {
     if (swapchain_images_.empty()) {
@@ -134,12 +120,10 @@ public:
     return image_views;
   }
   static const vk::RenderPass &render_pass() {
-    if (render_pass_) {
-      return *render_pass_;
-    } else {
+    if (!render_pass_) {
       render_pass_ = vka::create_render_pass(device(), surface_format().format);
-      return *render_pass_;
     }
+    return *render_pass_;
   }
 
 private:
