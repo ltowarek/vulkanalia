@@ -15,6 +15,7 @@
  */
 
 #include "triangle.hpp"
+#include <fstream>
 
 namespace vka {
 WindowManager::WindowManager(const std::string &name) : class_name_(name) {
@@ -237,5 +238,10 @@ create_swapchain_image_views(const vk::Device &device,
     image_views[i] = device.createImageViewUnique(info);
   }
   return image_views;
+}
+std::vector<char> read_file(const std::string &file_name) {
+  std::ifstream f(file_name, std::ios::binary);
+  return std::vector<char>((std::istreambuf_iterator<char>(f)),
+                           std::istreambuf_iterator<char>());
 }
 }

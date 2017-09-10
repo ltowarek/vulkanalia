@@ -16,6 +16,7 @@
 
 #include "triangle.hpp"
 #include "gtest/gtest.h"
+#include <fstream>
 
 class VulkanCache {
 public:
@@ -375,4 +376,18 @@ TEST(TriangleExample, CreatesSwapchainImageViewsWithoutThrowingException) {
       VulkanCache::device().getSwapchainImagesKHR(swapchain);
   EXPECT_NO_THROW(vka::create_swapchain_image_views(
       VulkanCache::device(), images, VulkanCache::surface_format()));
+}
+
+TEST(TriangleExample, ReturnsVectorOfBytesGivenFileExists) {
+  const std::string file_name = "file.txt";
+  const std::string content = "Content";
+  std::ofstream f;
+  f.open(file_name);
+  f << content;
+  f.close();
+  EXPECT_EQ(vka::read_file(file_name).size(), content.size());
+}
+
+TEST(TriangleExample, ReturnsVectorWithSizeEqualToZeroGivenFileDoesExist) {
+  EXPECT_EQ(vka::read_file("unknown").size(), 0);
 }
