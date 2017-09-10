@@ -255,4 +255,109 @@ vk::UniquePipelineLayout create_pipeline_layout(const vk::Device &device) {
   vk::PipelineLayoutCreateInfo info;
   return device.createPipelineLayoutUnique(info);
 }
+vk::UniqueRenderPass create_render_pass(const vk::Device &device,
+                                        const vk::Format &surface_format) {
+  vk::RenderPassCreateInfo info;
+  vk::AttachmentDescription color_attachment;
+  color_attachment.format = surface_format;
+  color_attachment.loadOp = vk::AttachmentLoadOp::eClear;
+  color_attachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+  color_attachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+  color_attachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+  info.attachmentCount = 1;
+  info.pAttachments = &color_attachment;
+
+  vk::AttachmentReference color_attachment_reference;
+  color_attachment_reference.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+  vk::SubpassDescription subpass;
+  subpass.colorAttachmentCount = 1;
+  subpass.pColorAttachments = &color_attachment_reference;
+  info.subpassCount = 1;
+  info.pSubpasses = &subpass;
+
+  return device.createRenderPassUnique(info);
+}
+vk::UniquePipeline
+create_graphics_pipeline(const vk::Device &device,
+                         const vk::Extent2D &swapchain_extent,
+                         const vk::Format &surface_format) {
+  vk::GraphicsPipelineCreateInfo info;
+
+  vk::UniqueShaderModule vertex_shader_module =
+      create_shader_module(device, read_file("vert.spv"));
+  vk::PipelineShaderStageCreateInfo vertex_shader_stage;
+  vertex_shader_stage.stage = vk::ShaderStageFlagBits::eVertex;
+  vertex_shader_stage.module = *vertex_shader_module;
+  vertex_shader_stage.pName = "main";
+
+  vk::UniqueShaderModule fragment_shader_module =
+      create_shader_module(device, read_file("frag.spv"));
+  vk::PipelineShaderStageCreateInfo fragment_shader_stage;
+  fragment_shader_stage.stage = vk::ShaderStageFlagBits::eFragment;
+  fragment_shader_stage.module = *fragment_shader_module;
+  fragment_shader_stage.pName = "main";
+
+  std::vector<vk::PipelineShaderStageCreateInfo> stages = {
+      vertex_shader_stage, fragment_shader_stage};
+  info.stageCount = static_cast<uint32_t>(stages.size());
+  info.pStages = stages.data();
+
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state;
+  info.pVertexInputState = &vertex_input_state;
+
+  vk::PipelineInputAssemblyStateCreateInfo input_assembly_state;
+  info.pInputAssemblyState = &input_assembly_state;
+
+  vk::Viewport viewport;
+  viewport.x = 0.0f;
+  viewport.y = 0.0f;
+  viewport.width = static_cast<float>(swapchain_extent.width);
+  viewport.height = static_cast<float>(swapchain_extent.height);
+  viewport.minDepth = 0.0f;
+  viewport.maxDepth = 1.0f;
+
+  vk::Rect2D scissor;
+  scissor.extent = swapchain_extent;
+
+  vk::PipelineViewportStateCreateInfo viewport_state;
+  viewport_state.viewportCount = 1;
+  viewport_state.pViewports = &viewport;
+  viewport_state.scissorCount = 1;
+  viewport_state.pScissors = &scissor;
+  info.pViewportState = &viewport_state;
+
+  vk::PipelineRasterizationStateCreateInfo rasterization_state;
+  rasterization_state.depthClampEnable = VK_FALSE;
+  rasterization_state.rasterizerDiscardEnable = VK_FALSE;
+  rasterization_state.polygonMode = vk::PolygonMode::eFill;
+  rasterization_state.lineWidth = 1.0f;
+  rasterization_state.cullMode = vk::CullModeFlagBits::eBack;
+  rasterization_state.frontFace = vk::FrontFace::eClockwise;
+  rasterization_state.depthBiasEnable = VK_FALSE;
+  info.pRasterizationState = &rasterization_state;
+
+  vk::PipelineMultisampleStateCreateInfo multisample_state;
+  info.pMultisampleState = &multisample_state;
+
+  vk::PipelineColorBlendAttachmentState color_blend_attachment_state;
+  color_blend_attachment_state.colorWriteMask =
+      vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+  color_blend_attachment_state.blendEnable = VK_FALSE;
+
+  vk::PipelineColorBlendStateCreateInfo color_blend_state;
+  color_blend_state.attachmentCount = 1;
+  color_blend_state.pAttachments = &color_blend_attachment_state;
+  info.pColorBlendState = &color_blend_state;
+
+  vk::UniquePipelineLayout layout = create_pipeline_layout(device);
+  info.layout = *layout;
+
+  vk::UniqueRenderPass render_pass = create_render_pass(device, surface_format);
+  info.renderPass = *render_pass;
+
+  vk::UniquePipelineCache pipeline_cache;
+  return device.createGraphicsPipelineUnique(*pipeline_cache, info);
+}
 }

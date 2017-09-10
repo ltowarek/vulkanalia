@@ -400,3 +400,14 @@ TEST(TriangleExample, CreatesShaderModuleWithoutThrowingException) {
 TEST(TriangleExample, CreatesPipelineLayoutWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_pipeline_layout(VulkanCache::device()));
 }
+
+TEST(TriangleExample, CreatesRenderPassWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_render_pass(VulkanCache::device(),
+                                          vk::Format::eB8G8R8A8Unorm));
+}
+
+TEST(TriangleExample, CreatesGraphicsPipelineWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_graphics_pipeline(VulkanCache::device(),
+                                                vk::Extent2D(500, 500),
+                                                vk::Format::eB8G8R8A8Unorm));
+}

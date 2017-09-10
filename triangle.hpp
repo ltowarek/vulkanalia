@@ -84,5 +84,11 @@ std::vector<char> read_file(const std::string &file_name);
 vk::UniqueShaderModule create_shader_module(const vk::Device &device,
                                             const std::vector<char> &code);
 vk::UniquePipelineLayout create_pipeline_layout(const vk::Device &device);
+vk::UniqueRenderPass create_render_pass(const vk::Device &device,
+                                        const vk::Format &surface_format);
+vk::UniquePipeline
+create_graphics_pipeline(const vk::Device &device,
+                         const vk::Extent2D &swapchain_extent,
+                         const vk::Format &surface_format);
 }
 #endif
