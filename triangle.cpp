@@ -251,4 +251,8 @@ vk::UniqueShaderModule create_shader_module(const vk::Device &device,
   info.pCode = reinterpret_cast<const uint32_t *>(code.data());
   return device.createShaderModuleUnique(info);
 }
+vk::UniquePipelineLayout create_pipeline_layout(const vk::Device &device) {
+  vk::PipelineLayoutCreateInfo info;
+  return device.createPipelineLayoutUnique(info);
+}
 }

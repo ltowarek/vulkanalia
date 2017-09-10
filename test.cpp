@@ -396,3 +396,7 @@ TEST(TriangleExample, CreatesShaderModuleWithoutThrowingException) {
   const std::vector<char> code = vka::read_file("vert.spv");
   EXPECT_NO_THROW(vka::create_shader_module(VulkanCache::device(), code));
 }
+
+TEST(TriangleExample, CreatesPipelineLayoutWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_pipeline_layout(VulkanCache::device()));
+}

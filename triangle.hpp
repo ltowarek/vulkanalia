@@ -83,5 +83,6 @@ create_swapchain_image_views(const vk::Device &device,
 std::vector<char> read_file(const std::string &file_name);
 vk::UniqueShaderModule create_shader_module(const vk::Device &device,
                                             const std::vector<char> &code);
+vk::UniquePipelineLayout create_pipeline_layout(const vk::Device &device);
 }
 #endif
