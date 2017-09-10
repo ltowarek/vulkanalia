@@ -90,5 +90,9 @@ vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
                          const vk::RenderPass &render_pass,
                          const vk::Extent2D &swapchain_extent);
+std::vector<vk::UniqueFramebuffer>
+create_framebuffers(const vk::Device &device, const vk::RenderPass &render_pass,
+                    const vk::Extent2D &swapchain_extent,
+                    const std::vector<vk::ImageView> &swapchain_image_views);
 }
 #endif

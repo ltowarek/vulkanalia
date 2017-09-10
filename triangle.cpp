@@ -359,4 +359,22 @@ create_graphics_pipeline(const vk::Device &device,
   vk::UniquePipelineCache pipeline_cache;
   return device.createGraphicsPipelineUnique(*pipeline_cache, info);
 }
+std::vector<vk::UniqueFramebuffer>
+create_framebuffers(const vk::Device &device, const vk::RenderPass &render_pass,
+                    const vk::Extent2D &swapchain_extent,
+                    const std::vector<vk::ImageView> &swapchain_image_views) {
+  std::vector<vk::UniqueFramebuffer> framebuffers;
+  for (size_t i = 0; i < swapchain_image_views.size(); ++i) {
+    vk::ImageView attachments = swapchain_image_views[i];
+    vk::FramebufferCreateInfo info;
+    info.renderPass = render_pass;
+    info.attachmentCount = 1;
+    info.pAttachments = &attachments;
+    info.width = swapchain_extent.width;
+    info.height = swapchain_extent.height;
+    info.layers = 1;
+    framebuffers.push_back(device.createFramebufferUnique(info));
+  }
+  return framebuffers;
+}
 }

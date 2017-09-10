@@ -92,6 +92,14 @@ public:
         physical_device().getSurfaceFormatsKHR(surface);
     return vka::select_surface_format(formats);
   }
+  static const vk::Extent2D swapchain_extent() {
+    const vk::SurfaceKHR surface = VulkanCache::surface();
+    const vk::SurfaceCapabilitiesKHR capabilities =
+        physical_device().getSurfaceCapabilitiesKHR(surface);
+    uint32_t width = 500;
+    uint32_t height = 500;
+    return vka::select_swapchain_extent(capabilities, width, height);
+  }
   static const vk::SwapchainKHR &swapchain() {
     if (swapchain_) {
       return *swapchain_;
@@ -107,6 +115,23 @@ public:
                                          device(), surface);
       return *swapchain_;
     }
+  }
+  static std::vector<vk::Image> swapchain_images() {
+    if (swapchain_images_.empty()) {
+      swapchain_images_ = device().getSwapchainImagesKHR(swapchain());
+    }
+    return swapchain_images_;
+  }
+  static std::vector<vk::ImageView> swapchain_image_views() {
+    if (swapchain_image_views_.empty()) {
+      swapchain_image_views_ = vka::create_swapchain_image_views(
+          device(), swapchain_images(), surface_format());
+    }
+    std::vector<vk::ImageView> image_views;
+    for (const auto &image_view : swapchain_image_views_) {
+      image_views.push_back(*image_view);
+    }
+    return image_views;
   }
   static const vk::RenderPass &render_pass() {
     if (render_pass_) {
@@ -126,6 +151,8 @@ private:
   static vk::PhysicalDevice physical_device_;
   static std::vector<vk::QueueFamilyProperties> queue_family_properties_;
   static vk::UniqueSwapchainKHR swapchain_;
+  static std::vector<vk::Image> swapchain_images_;
+  static std::vector<vk::UniqueImageView> swapchain_image_views_;
   static vk::UniqueRenderPass render_pass_;
 };
 
@@ -138,6 +165,10 @@ vk::PhysicalDevice VulkanCache::physical_device_ = vk::PhysicalDevice();
 std::vector<vk::QueueFamilyProperties> VulkanCache::queue_family_properties_ =
     std::vector<vk::QueueFamilyProperties>();
 vk::UniqueSwapchainKHR VulkanCache::swapchain_ = vk::UniqueSwapchainKHR();
+std::vector<vk::Image> VulkanCache::swapchain_images_ =
+    std::vector<vk::Image>();
+std::vector<vk::UniqueImageView> VulkanCache::swapchain_image_views_ =
+    std::vector<vk::UniqueImageView>();
 vk::UniqueRenderPass VulkanCache::render_pass_ = vk::UniqueRenderPass();
 
 TEST(WindowManager,
@@ -381,11 +412,9 @@ TEST(TriangleExample, CreatesSwapchainWithoutThrowingException) {
 }
 
 TEST(TriangleExample, CreatesSwapchainImageViewsWithoutThrowingException) {
-  const vk::SwapchainKHR swapchain = VulkanCache::swapchain();
-  const std::vector<vk::Image> images =
-      VulkanCache::device().getSwapchainImagesKHR(swapchain);
   EXPECT_NO_THROW(vka::create_swapchain_image_views(
-      VulkanCache::device(), images, VulkanCache::surface_format()));
+      VulkanCache::device(), VulkanCache::swapchain_images(),
+      VulkanCache::surface_format()));
 }
 
 TEST(TriangleExample, ReturnsVectorOfBytesGivenFileExists) {
@@ -417,7 +446,13 @@ TEST(TriangleExample, CreatesRenderPassWithoutThrowingException) {
 }
 
 TEST(TriangleExample, CreatesGraphicsPipelineWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::create_graphics_pipeline(VulkanCache::device(),
-                                                VulkanCache::render_pass(),
-                                                vk::Extent2D(500, 500)));
+  EXPECT_NO_THROW(vka::create_graphics_pipeline(
+      VulkanCache::device(), VulkanCache::render_pass(),
+      VulkanCache::swapchain_extent()));
+}
+
+TEST(TriangleExample, CreatesFramebuffersWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_framebuffers(
+      VulkanCache::device(), VulkanCache::render_pass(),
+      VulkanCache::swapchain_extent(), VulkanCache::swapchain_image_views()));
 }
