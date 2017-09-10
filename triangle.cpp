@@ -133,10 +133,11 @@ vk::UniqueCommandPool create_command_pool(const vk::Device &device,
 }
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
-                       const vk::CommandPool &command_pool) {
+                       const vk::CommandPool &command_pool,
+                       const uint32_t command_buffer_count) {
   vk::CommandBufferAllocateInfo info;
   info.commandPool = command_pool;
-  info.commandBufferCount = 1;
+  info.commandBufferCount = command_buffer_count;
   info.level = vk::CommandBufferLevel::ePrimary;
   return device.allocateCommandBuffersUnique(info);
 }
@@ -376,5 +377,38 @@ create_framebuffers(const vk::Device &device, const vk::RenderPass &render_pass,
     framebuffers.push_back(device.createFramebufferUnique(info));
   }
   return framebuffers;
+}
+void record_command_buffers(
+    const vk::Device &device,
+    const std::vector<vk::CommandBuffer> &command_buffers,
+    const vk::RenderPass &render_pass, const vk::Pipeline &graphics_pipeline,
+    const std::vector<vk::Framebuffer> &framebuffers,
+    const vk::Extent2D &swapchain_extent) {
+
+  for (size_t i = 0; i < command_buffers.size(); ++i) {
+    vk::CommandBufferBeginInfo command_buffer_begin_info;
+    command_buffer_begin_info.flags =
+        vk::CommandBufferUsageFlagBits::eSimultaneousUse;
+
+    command_buffers[i].begin(command_buffer_begin_info);
+
+    vk::RenderPassBeginInfo render_pass_begin_info;
+    render_pass_begin_info.renderPass = render_pass;
+    render_pass_begin_info.framebuffer = framebuffers[i];
+    render_pass_begin_info.renderArea.extent = swapchain_extent;
+
+    vk::ClearValue clear_color;
+    render_pass_begin_info.clearValueCount = 1;
+    render_pass_begin_info.pClearValues = &clear_color;
+
+    command_buffers[i].beginRenderPass(render_pass_begin_info,
+                                       vk::SubpassContents::eInline);
+    command_buffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics,
+                                    graphics_pipeline);
+    command_buffers[i].draw(3, 1, 0, 0);
+    command_buffers[i].endRenderPass();
+
+    command_buffers[i].end();
+  }
 }
 }

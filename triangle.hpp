@@ -56,7 +56,8 @@ vk::UniqueCommandPool create_command_pool(const vk::Device &device,
                                           const uint32_t queue_index);
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
-                       const vk::CommandPool &command_pool);
+                       const vk::CommandPool &command_pool,
+                       const uint32_t command_buffer_count);
 vk::UniqueSurfaceKHR create_surface(const vk::Instance &instance,
                                     HINSTANCE hInstance, HWND hWnd);
 std::vector<vk::Bool32>
@@ -94,5 +95,11 @@ std::vector<vk::UniqueFramebuffer>
 create_framebuffers(const vk::Device &device, const vk::RenderPass &render_pass,
                     const vk::Extent2D &swapchain_extent,
                     const std::vector<vk::ImageView> &swapchain_image_views);
+void record_command_buffers(
+    const vk::Device &device,
+    const std::vector<vk::CommandBuffer> &command_buffers,
+    const vk::RenderPass &render_pass, const vk::Pipeline &graphics_pipeline,
+    const std::vector<vk::Framebuffer> &framebuffers,
+    const vk::Extent2D &swapchain_extent);
 }
 #endif

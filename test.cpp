@@ -125,6 +125,36 @@ public:
     }
     return *render_pass_;
   }
+  static const vk::Pipeline &graphics_pipeline() {
+    if (!graphics_pipeline_) {
+      graphics_pipeline_ = vka::create_graphics_pipeline(
+          device(), render_pass(), swapchain_extent());
+    }
+    return *graphics_pipeline_;
+  }
+  static const std::vector<vk::Framebuffer> framebuffers() {
+    if (framebuffers_.empty()) {
+      framebuffers_ = vka::create_framebuffers(
+          device(), render_pass(), swapchain_extent(), swapchain_image_views());
+    }
+    std::vector<vk::Framebuffer> framebuffers;
+    for (const auto &framebuffer : framebuffers_) {
+      framebuffers.push_back(*framebuffer);
+    }
+    return framebuffers;
+  }
+  static const std::vector<vk::CommandBuffer> command_buffers() {
+    if (command_buffers_.empty()) {
+      command_buffers_ = vka::create_command_buffers(
+          device(), command_pool(),
+          static_cast<uint32_t>(framebuffers().size()));
+    }
+    std::vector<vk::CommandBuffer> command_buffers;
+    for (const auto &command_buffer : command_buffers_) {
+      command_buffers.push_back(*command_buffer);
+    }
+    return command_buffers;
+  }
 
 private:
   static vk::UniqueInstance instance_;
@@ -138,6 +168,9 @@ private:
   static std::vector<vk::Image> swapchain_images_;
   static std::vector<vk::UniqueImageView> swapchain_image_views_;
   static vk::UniqueRenderPass render_pass_;
+  static vk::UniquePipeline graphics_pipeline_;
+  static std::vector<vk::UniqueFramebuffer> framebuffers_;
+  static std::vector<vk::UniqueCommandBuffer> command_buffers_;
 };
 
 vk::UniqueInstance VulkanCache::instance_ = vk::UniqueInstance();
@@ -154,6 +187,11 @@ std::vector<vk::Image> VulkanCache::swapchain_images_ =
 std::vector<vk::UniqueImageView> VulkanCache::swapchain_image_views_ =
     std::vector<vk::UniqueImageView>();
 vk::UniqueRenderPass VulkanCache::render_pass_ = vk::UniqueRenderPass();
+vk::UniquePipeline VulkanCache::graphics_pipeline_ = vk::UniquePipeline();
+std::vector<vk::UniqueFramebuffer> VulkanCache::framebuffers_ =
+    std::vector<vk::UniqueFramebuffer>();
+std::vector<vk::UniqueCommandBuffer> VulkanCache::command_buffers_ =
+    std::vector<vk::UniqueCommandBuffer>();
 
 TEST(WindowManager,
      ReturnsNonNullHInstanceGivenModuleHandleIsSuccessfullyRetrieved) {
@@ -222,8 +260,9 @@ TEST(TriangleExample, CreatesCommandPoolWithoutThrowingException) {
 }
 
 TEST(TriangleExample, CreatesCommandBuffersWithoutThrowingException) {
+  const uint32_t command_buffer_count = 3;
   EXPECT_NO_THROW(vka::create_command_buffers(VulkanCache::device(),
-                                              VulkanCache::command_pool()));
+                                              VulkanCache::command_pool(), 3));
 }
 
 TEST(TriangleExample, CreatesSurfaceWithoutThrowingException) {
@@ -439,4 +478,11 @@ TEST(TriangleExample, CreatesFramebuffersWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_framebuffers(
       VulkanCache::device(), VulkanCache::render_pass(),
       VulkanCache::swapchain_extent(), VulkanCache::swapchain_image_views()));
+}
+
+TEST(TriangleExample, RecordsCommandBuffersWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::record_command_buffers(
+      VulkanCache::device(), VulkanCache::command_buffers(),
+      VulkanCache::render_pass(), VulkanCache::graphics_pipeline(),
+      VulkanCache::framebuffers(), VulkanCache::swapchain_extent()));
 }
