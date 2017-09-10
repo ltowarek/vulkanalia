@@ -244,4 +244,11 @@ std::vector<char> read_file(const std::string &file_name) {
   return std::vector<char>((std::istreambuf_iterator<char>(f)),
                            std::istreambuf_iterator<char>());
 }
+vk::UniqueShaderModule create_shader_module(const vk::Device &device,
+                                            const std::vector<char> &code) {
+  vk::ShaderModuleCreateInfo info;
+  info.codeSize = code.size();
+  info.pCode = reinterpret_cast<const uint32_t *>(code.data());
+  return device.createShaderModuleUnique(info);
+}
 }

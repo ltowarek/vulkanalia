@@ -37,3 +37,8 @@ add_executable(vulkanalia main.cpp)
 
 add_executable(vulkanalia_test test.cpp)
 target_link_libraries(vulkanalia_test PRIVATE GTest::GTest GTest::Main vka::triangle)
+
+add_custom_command(TARGET vulkanalia_test POST_BUILD 
+                   COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                   "${CMAKE_SOURCE_DIR}/vert.spv"              
+                   $<TARGET_FILE_DIR:vulkanalia_test>)

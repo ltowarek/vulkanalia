@@ -81,5 +81,7 @@ create_swapchain_image_views(const vk::Device &device,
                              const std::vector<vk::Image> images,
                              const vk::SurfaceFormatKHR &surface_format);
 std::vector<char> read_file(const std::string &file_name);
+vk::UniqueShaderModule create_shader_module(const vk::Device &device,
+                                            const std::vector<char> &code);
 }
 #endif

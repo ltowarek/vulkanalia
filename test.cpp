@@ -391,3 +391,8 @@ TEST(TriangleExample, ReturnsVectorOfBytesGivenFileExists) {
 TEST(TriangleExample, ReturnsVectorWithSizeEqualToZeroGivenFileDoesExist) {
   EXPECT_EQ(vka::read_file("unknown").size(), 0);
 }
+
+TEST(TriangleExample, CreatesShaderModuleWithoutThrowingException) {
+  const std::vector<char> code = vka::read_file("vert.spv");
+  EXPECT_NO_THROW(vka::create_shader_module(VulkanCache::device(), code));
+}
