@@ -280,8 +280,8 @@ vk::UniqueRenderPass create_render_pass(const vk::Device &device,
 }
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
-                         const vk::Extent2D &swapchain_extent,
-                         const vk::Format &surface_format) {
+                         const vk::RenderPass &render_pass,
+                         const vk::Extent2D &swapchain_extent) {
   vk::GraphicsPipelineCreateInfo info;
 
   vk::UniqueShaderModule vertex_shader_module =
@@ -354,8 +354,7 @@ create_graphics_pipeline(const vk::Device &device,
   vk::UniquePipelineLayout layout = create_pipeline_layout(device);
   info.layout = *layout;
 
-  vk::UniqueRenderPass render_pass = create_render_pass(device, surface_format);
-  info.renderPass = *render_pass;
+  info.renderPass = render_pass;
 
   vk::UniquePipelineCache pipeline_cache;
   return device.createGraphicsPipelineUnique(*pipeline_cache, info);

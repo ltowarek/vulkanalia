@@ -88,7 +88,7 @@ vk::UniqueRenderPass create_render_pass(const vk::Device &device,
                                         const vk::Format &surface_format);
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
-                         const vk::Extent2D &swapchain_extent,
-                         const vk::Format &surface_format);
+                         const vk::RenderPass &render_pass,
+                         const vk::Extent2D &swapchain_extent);
 }
 #endif

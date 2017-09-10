@@ -108,6 +108,14 @@ public:
       return *swapchain_;
     }
   }
+  static const vk::RenderPass &render_pass() {
+    if (render_pass_) {
+      return *render_pass_;
+    } else {
+      render_pass_ = vka::create_render_pass(device(), surface_format().format);
+      return *render_pass_;
+    }
+  }
 
 private:
   static vk::UniqueInstance instance_;
@@ -118,6 +126,7 @@ private:
   static vk::PhysicalDevice physical_device_;
   static std::vector<vk::QueueFamilyProperties> queue_family_properties_;
   static vk::UniqueSwapchainKHR swapchain_;
+  static vk::UniqueRenderPass render_pass_;
 };
 
 vk::UniqueInstance VulkanCache::instance_ = vk::UniqueInstance();
@@ -129,6 +138,7 @@ vk::PhysicalDevice VulkanCache::physical_device_ = vk::PhysicalDevice();
 std::vector<vk::QueueFamilyProperties> VulkanCache::queue_family_properties_ =
     std::vector<vk::QueueFamilyProperties>();
 vk::UniqueSwapchainKHR VulkanCache::swapchain_ = vk::UniqueSwapchainKHR();
+vk::UniqueRenderPass VulkanCache::render_pass_ = vk::UniqueRenderPass();
 
 TEST(WindowManager,
      ReturnsNonNullHInstanceGivenModuleHandleIsSuccessfullyRetrieved) {
@@ -408,6 +418,6 @@ TEST(TriangleExample, CreatesRenderPassWithoutThrowingException) {
 
 TEST(TriangleExample, CreatesGraphicsPipelineWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_graphics_pipeline(VulkanCache::device(),
-                                                vk::Extent2D(500, 500),
-                                                vk::Format::eB8G8R8A8Unorm));
+                                                VulkanCache::render_pass(),
+                                                vk::Extent2D(500, 500)));
 }
