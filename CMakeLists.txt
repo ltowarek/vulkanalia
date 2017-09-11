@@ -34,6 +34,7 @@ add_library(vka::triangle ALIAS triangle)
 target_link_libraries(triangle Vulkan::Vulkan)
 
 add_executable(vulkanalia main.cpp)
+target_link_libraries(vulkanalia vka::triangle)
 
 add_custom_command(TARGET vulkanalia POST_BUILD 
                    COMMAND "${CMAKE_COMMAND}" -E copy_if_different

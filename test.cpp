@@ -46,7 +46,7 @@ public:
   }
   static const vk::CommandPool &command_pool() {
     if (!command_pool_) {
-      command_pool_ = vka::create_command_pool(device(), queue_index_);
+      command_pool_ = vka::create_command_pool(device(), queue_index());
     }
     return *command_pool_;
   }

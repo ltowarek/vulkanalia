@@ -308,6 +308,7 @@ create_graphics_pipeline(const vk::Device &device,
   info.pVertexInputState = &vertex_input_state;
 
   vk::PipelineInputAssemblyStateCreateInfo input_assembly_state;
+  input_assembly_state.topology = vk::PrimitiveTopology::eTriangleList;
   info.pInputAssemblyState = &input_assembly_state;
 
   vk::Viewport viewport;
@@ -434,8 +435,7 @@ void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
   submit_info.pWaitDstStageMask = &wait_stages;
   submit_info.signalSemaphoreCount = 1;
   submit_info.pSignalSemaphores = &*is_rendering_finished;
-  submit_info.commandBufferCount =
-      static_cast<uint32_t>(command_buffers.size());
+  submit_info.commandBufferCount = 1;
   submit_info.pCommandBuffers = &command_buffers[image_index];
 
   vk::Queue queue = device.getQueue(queue_index, 0);
