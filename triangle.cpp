@@ -411,4 +411,44 @@ void record_command_buffers(
     command_buffers[i].end();
   }
 }
+void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
+                const std::vector<vk::CommandBuffer> &command_buffers,
+                const uint32_t queue_index) {
+  vk::SemaphoreCreateInfo semaphore_info;
+  vk::UniqueSemaphore is_image_available =
+      device.createSemaphoreUnique(semaphore_info);
+  vk::UniqueSemaphore is_rendering_finished =
+      device.createSemaphoreUnique(semaphore_info);
+
+  const uint32_t image_index =
+      device
+          .acquireNextImageKHR(swapchain, UINT64_MAX, *is_image_available,
+                               vk::Fence())
+          .value;
+
+  vk::SubmitInfo submit_info;
+  vk::PipelineStageFlags wait_stages =
+      vk::PipelineStageFlagBits::eColorAttachmentOutput;
+  submit_info.waitSemaphoreCount = 1;
+  submit_info.pWaitSemaphores = &*is_image_available;
+  submit_info.pWaitDstStageMask = &wait_stages;
+  submit_info.signalSemaphoreCount = 1;
+  submit_info.pSignalSemaphores = &*is_rendering_finished;
+  submit_info.commandBufferCount =
+      static_cast<uint32_t>(command_buffers.size());
+  submit_info.pCommandBuffers = &command_buffers[image_index];
+
+  vk::Queue queue = device.getQueue(queue_index, 0);
+  queue.submit(submit_info, vk::Fence());
+
+  vk::PresentInfoKHR present_info;
+  present_info.waitSemaphoreCount = 1;
+  present_info.pWaitSemaphores = &*is_rendering_finished;
+  present_info.swapchainCount = 1;
+  present_info.pSwapchains = &swapchain;
+  present_info.pImageIndices = &image_index;
+
+  queue.presentKHR(present_info);
+  queue.waitIdle();
+}
 }

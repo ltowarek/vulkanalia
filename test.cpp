@@ -30,17 +30,20 @@ public:
   }
   static const vk::Device &device() {
     if (!device_) {
-      const std::vector<vk::PhysicalDevice> devices =
-          instance().enumeratePhysicalDevices();
-      const vk::PhysicalDevice physical_device =
-          vka::select_physical_device(devices);
-      const std::vector<vk::QueueFamilyProperties> queues =
-          physical_device.getQueueFamilyProperties();
-      device_ = vka::create_device(physical_device, queue_index_);
+      device_ = vka::create_device(physical_device(), queue_index());
     }
     return *device_;
   }
-  static const uint32_t queue_index() { return queue_index_; }
+  static const uint32_t queue_index() {
+    if (queue_index_ == UINT32_MAX) {
+      std::vector<vk::Bool32> presentation_support =
+          vka::get_presentation_support(physical_device(), surface(),
+                                        queue_family_properties().size());
+      queue_index_ = vka::find_graphics_and_presentation_queue_family_index(
+          queue_family_properties(), presentation_support);
+    }
+    return queue_index_;
+  }
   static const vk::CommandPool &command_pool() {
     if (!command_pool_) {
       command_pool_ = vka::create_command_pool(device(), queue_index_);
@@ -158,7 +161,7 @@ public:
 
 private:
   static vk::UniqueInstance instance_;
-  static const uint32_t queue_index_;
+  static uint32_t queue_index_;
   static vk::UniqueDevice device_;
   static vk::UniqueCommandPool command_pool_;
   static vk::UniqueSurfaceKHR surface_;
@@ -175,7 +178,7 @@ private:
 
 vk::UniqueInstance VulkanCache::instance_ = vk::UniqueInstance();
 vk::UniqueDevice VulkanCache::device_ = vk::UniqueDevice();
-const uint32_t VulkanCache::queue_index_ = 0;
+uint32_t VulkanCache::queue_index_ = UINT32_MAX;
 vk::UniqueCommandPool VulkanCache::command_pool_ = vk::UniqueCommandPool();
 vk::UniqueSurfaceKHR VulkanCache::surface_ = vk::UniqueSurfaceKHR();
 vk::PhysicalDevice VulkanCache::physical_device_ = vk::PhysicalDevice();
@@ -485,4 +488,22 @@ TEST(TriangleExample, RecordsCommandBuffersWithoutThrowingException) {
       VulkanCache::device(), VulkanCache::command_buffers(),
       VulkanCache::render_pass(), VulkanCache::graphics_pipeline(),
       VulkanCache::framebuffers(), VulkanCache::swapchain_extent()));
+}
+
+TEST(TriangleExample, DrawsFrameWithoutThrowingException) {
+  std::vector<vk::UniqueCommandBuffer> command_buffers =
+      vka::create_command_buffers(
+          VulkanCache::device(), VulkanCache::command_pool(),
+          static_cast<uint32_t>(VulkanCache::framebuffers().size()));
+  std::vector<vk::CommandBuffer> command_buffer_pointers;
+  for (const auto &command_buffer : command_buffers) {
+    command_buffer_pointers.push_back(*command_buffer);
+  }
+  vka::record_command_buffers(
+      VulkanCache::device(), command_buffer_pointers,
+      VulkanCache::render_pass(), VulkanCache::graphics_pipeline(),
+      VulkanCache::framebuffers(), VulkanCache::swapchain_extent());
+  EXPECT_NO_THROW(
+      vka::draw_frame(VulkanCache::device(), VulkanCache::swapchain(),
+                      command_buffer_pointers, VulkanCache::queue_index()));
 }
