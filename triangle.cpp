@@ -49,6 +49,8 @@ void VulkanController::initialize(const vk::Instance &instance,
 
   surface_ = surface;
   swapchain_extent_ = swapchain_extent;
+
+  recreate_swapchain(swapchain_extent_);
 }
 void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
   (*device_).waitIdle();
