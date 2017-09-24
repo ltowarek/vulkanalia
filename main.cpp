@@ -18,32 +18,57 @@
 #include "triangle.hpp"
 #include <GLFW/glfw3.h>
 
-int main(int argc, char *argv[]) {
-  const std::string application_name = "Triangle";
-  int width = 500;
-  int height = 500;
+class TriangleApplication {
+public:
+  void run() {
+    const std::string application_name = "Triangle";
+    int width = 500;
+    int height = 500;
 
-  glfwInit();
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  GLFWwindow *window = glfwCreateWindow(width, height, application_name.c_str(),
-                                        nullptr, nullptr);
+    glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    window_ = glfwCreateWindow(width, height, application_name.c_str(), nullptr,
+                               nullptr);
+    glfwSetWindowUserPointer(window_, this);
+    glfwSetWindowSizeCallback(window_, TriangleApplication::resize);
 
-  const vk::ApplicationInfo application_info =
-      vka::create_application_info(application_name, {0, 1, 0});
-  const vk::UniqueInstance instance = vka::create_instance(application_info);
+    const vk::ApplicationInfo application_info =
+        vka::create_application_info(application_name, {0, 1, 0});
+    vk::UniqueInstance instance = vka::create_instance(application_info);
 
-  VkSurfaceKHR raw_surface;
-  glfwCreateWindowSurface(*instance, window, nullptr, &raw_surface);
-  vk::UniqueSurfaceKHR surface(raw_surface);
+    VkSurfaceKHR raw_surface;
+    glfwCreateWindowSurface(*instance, window_, nullptr, &raw_surface);
+    vk::UniqueSurfaceKHR surface(raw_surface);
 
-  VulkanController vulkan_controller;
-  vulkan_controller.initialize(*instance, *surface,
-                               vk::Extent2D(width, height));
+    vulkan_controller_.initialize(std::move(instance), std::move(surface),
+                                  vk::Extent2D(width, height));
 
-  while (!glfwWindowShouldClose(window)) {
-    glfwPollEvents();
-    vulkan_controller.draw();
+    while (!glfwWindowShouldClose(window_)) {
+      glfwPollEvents();
+      vulkan_controller_.draw();
+    }
+
+    glfwDestroyWindow(window_);
+    glfwTerminate();
+  }
+  void recreate_swapchain() {
+    int width, height;
+    glfwGetWindowSize(window_, &width, &height);
+    vulkan_controller_.recreate_swapchain(vk::Extent2D(width, height));
+  }
+  static void resize(GLFWwindow *window, int width, int height) {
+    auto application = reinterpret_cast<TriangleApplication *>(
+        glfwGetWindowUserPointer(window));
+    application->recreate_swapchain();
   }
 
-  surface.release();
+private:
+  VulkanController vulkan_controller_;
+  GLFWwindow *window_;
+};
+
+int main(int argc, char *argv[]) {
+  TriangleApplication application;
+  application.run();
+  return 0;
 }
