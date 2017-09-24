@@ -22,33 +22,6 @@
 #include <vulkan/vulkan.hpp>
 
 namespace vka {
-class VulkanController {
-public:
-  ~VulkanController();
-  void initialize(vk::UniqueInstance instance, vk::UniqueSurfaceKHR surface,
-                  const vk::Extent2D swapchain_extent);
-  void recreate_swapchain(vk::Extent2D swapchain_extent);
-  void release();
-  void release_swapchain();
-  void draw();
-
-private:
-  vk::PhysicalDevice physical_device_;
-  uint32_t queue_index_;
-  vk::SurfaceFormatKHR surface_format_;
-  vk::Extent2D swapchain_extent_;
-
-  vk::UniqueInstance instance_;
-  vk::UniqueSurfaceKHR surface_;
-  vk::UniqueDevice device_;
-  vk::UniqueCommandPool command_pool_;
-  vk::UniqueSwapchainKHR swapchain_;
-  std::vector<vk::UniqueImageView> swapchain_image_views_;
-  vk::UniqueRenderPass render_pass_;
-  vk::UniquePipeline graphics_pipeline_;
-  std::vector<vk::UniqueCommandBuffer> command_buffers_;
-  std::vector<vk::UniqueFramebuffer> framebuffers_;
-};
 struct Version {
   uint32_t major;
   uint32_t minor;
@@ -114,5 +87,42 @@ void record_command_buffers(
 void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
                 const std::vector<vk::CommandBuffer> &command_buffers,
                 const uint32_t queue_index);
+class VulkanController {
+public:
+  ~VulkanController();
+  void initialize(vk::UniqueInstance instance, vk::UniqueSurfaceKHR surface,
+                  const vk::Extent2D swapchain_extent);
+  void recreate_swapchain(vk::Extent2D swapchain_extent);
+  void release();
+  void release_swapchain();
+  void draw();
+
+private:
+  vk::PhysicalDevice physical_device_;
+  uint32_t queue_index_;
+  vk::SurfaceFormatKHR surface_format_;
+  vk::Extent2D swapchain_extent_;
+
+  vk::UniqueInstance instance_;
+  vk::UniqueSurfaceKHR surface_;
+  vk::UniqueDevice device_;
+  vk::UniqueCommandPool command_pool_;
+  vk::UniqueSwapchainKHR swapchain_;
+  std::vector<vk::UniqueImageView> swapchain_image_views_;
+  vk::UniqueRenderPass render_pass_;
+  vk::UniquePipeline graphics_pipeline_;
+  std::vector<vk::UniqueCommandBuffer> command_buffers_;
+  std::vector<vk::UniqueFramebuffer> framebuffers_;
+};
+class TriangleApplication {
+public:
+  void run();
+  void recreate_swapchain();
+  static void resize(GLFWwindow *window, int width, int height);
+
+private:
+  vka::VulkanController vulkan_controller_;
+  GLFWwindow *window_;
+};
 }
 #endif

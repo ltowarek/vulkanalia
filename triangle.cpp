@@ -18,124 +18,6 @@
 #include <fstream>
 
 namespace vka {
-VulkanController::~VulkanController() {
-  if (device_) {
-    (*device_).waitIdle();
-  }
-  release();
-}
-void VulkanController::initialize(vk::UniqueInstance instance,
-                                  vk::UniqueSurfaceKHR surface,
-                                  const vk::Extent2D swapchain_extent) {
-  instance_ = std::move(instance);
-  surface_ = std::move(surface);
-  swapchain_extent_ = swapchain_extent;
-
-  const std::vector<vk::PhysicalDevice> devices =
-      (*instance_).enumeratePhysicalDevices();
-  physical_device_ = vka::select_physical_device(devices);
-
-  const std::vector<vk::SurfaceFormatKHR> formats =
-      physical_device_.getSurfaceFormatsKHR(*surface_);
-  surface_format_ = vka::select_surface_format(formats);
-
-  const std::vector<vk::QueueFamilyProperties> queue_family_properties =
-      physical_device_.getQueueFamilyProperties();
-
-  const std::vector<vk::Bool32> presentation_support =
-      vka::get_presentation_support(physical_device_, *surface_,
-                                    queue_family_properties.size());
-
-  queue_index_ = vka::find_graphics_and_presentation_queue_family_index(
-      queue_family_properties, presentation_support);
-
-  device_ = vka::create_device(physical_device_, queue_index_);
-
-  command_pool_ = vka::create_command_pool(*device_, queue_index_);
-
-  recreate_swapchain(swapchain_extent_);
-}
-void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
-  swapchain_extent_ = swapchain_extent;
-
-  const vk::SurfaceCapabilitiesKHR capabilities =
-      physical_device_.getSurfaceCapabilitiesKHR(*surface_);
-  swapchain_extent_ = vka::select_swapchain_extent(
-      capabilities, swapchain_extent_.width, swapchain_extent_.height);
-
-  swapchain_ =
-      vka::create_swapchain(surface_format_, swapchain_extent_, capabilities,
-                            *device_, *surface_, *swapchain_);
-
-  std::vector<vk::Image> swapchain_images =
-      (*device_).getSwapchainImagesKHR(*swapchain_);
-
-  swapchain_image_views_ = vka::create_swapchain_image_views(
-      *device_, swapchain_images, surface_format_);
-
-  std::vector<vk::ImageView> swapchain_image_view_pointers;
-  for (const auto &image_view : swapchain_image_views_) {
-    swapchain_image_view_pointers.push_back(*image_view);
-  }
-
-  render_pass_ = vka::create_render_pass(*device_, surface_format_.format);
-
-  graphics_pipeline_ =
-      vka::create_graphics_pipeline(*device_, *render_pass_, swapchain_extent_);
-
-  framebuffers_ =
-      vka::create_framebuffers(*device_, *render_pass_, swapchain_extent_,
-                               swapchain_image_view_pointers);
-
-  std::vector<vk::Framebuffer> framebuffer_pointers;
-  for (const auto &framebuffer : framebuffers_) {
-    framebuffer_pointers.push_back(*framebuffer);
-  }
-
-  command_buffers_ = vka::create_command_buffers(
-      *device_, *command_pool_, static_cast<uint32_t>(framebuffers_.size()));
-
-  std::vector<vk::CommandBuffer> command_buffer_pointers;
-  for (const auto &command_buffer : command_buffers_) {
-    command_buffer_pointers.push_back(*command_buffer);
-  }
-
-  vka::record_command_buffers(*device_, command_buffer_pointers, *render_pass_,
-                              *graphics_pipeline_, framebuffer_pointers,
-                              swapchain_extent_);
-}
-void VulkanController::draw() {
-  std::vector<vk::CommandBuffer> command_buffer_pointers;
-  for (const auto &command_buffer : command_buffers_) {
-    command_buffer_pointers.push_back(*command_buffer);
-  }
-  vka::draw_frame(*device_, *swapchain_, command_buffer_pointers, queue_index_);
-}
-void VulkanController::release_swapchain() {
-  for (auto &framebuffer : framebuffers_) {
-    framebuffer.release();
-  }
-
-  for (auto &command_buffer : command_buffers_) {
-    command_buffer.release();
-  }
-
-  graphics_pipeline_.release();
-  render_pass_.release();
-
-  for (auto &image_view : swapchain_image_views_) {
-    image_view.release();
-  }
-
-  swapchain_.release();
-}
-void VulkanController::release() {
-  release_swapchain();
-  command_pool_.release();
-  device_.release();
-  surface_.release();
-  instance_.release();
-}
 vk::ApplicationInfo create_application_info(const std::string name,
                                             const Version version) {
   vk::ApplicationInfo info;
@@ -509,5 +391,173 @@ void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
 
   queue.presentKHR(present_info);
   queue.waitIdle();
+}
+VulkanController::~VulkanController() {
+  if (device_) {
+    (*device_).waitIdle();
+  }
+  release();
+}
+void VulkanController::initialize(vk::UniqueInstance instance,
+                                  vk::UniqueSurfaceKHR surface,
+                                  const vk::Extent2D swapchain_extent) {
+  instance_ = std::move(instance);
+  surface_ = std::move(surface);
+  swapchain_extent_ = swapchain_extent;
+
+  const std::vector<vk::PhysicalDevice> devices =
+      (*instance_).enumeratePhysicalDevices();
+  physical_device_ = vka::select_physical_device(devices);
+
+  const std::vector<vk::SurfaceFormatKHR> formats =
+      physical_device_.getSurfaceFormatsKHR(*surface_);
+  surface_format_ = vka::select_surface_format(formats);
+
+  const std::vector<vk::QueueFamilyProperties> queue_family_properties =
+      physical_device_.getQueueFamilyProperties();
+
+  const std::vector<vk::Bool32> presentation_support =
+      vka::get_presentation_support(physical_device_, *surface_,
+                                    queue_family_properties.size());
+
+  queue_index_ = vka::find_graphics_and_presentation_queue_family_index(
+      queue_family_properties, presentation_support);
+
+  device_ = vka::create_device(physical_device_, queue_index_);
+
+  command_pool_ = vka::create_command_pool(*device_, queue_index_);
+
+  recreate_swapchain(swapchain_extent_);
+}
+void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
+  swapchain_extent_ = swapchain_extent;
+
+  const vk::SurfaceCapabilitiesKHR capabilities =
+      physical_device_.getSurfaceCapabilitiesKHR(*surface_);
+  swapchain_extent_ = vka::select_swapchain_extent(
+      capabilities, swapchain_extent_.width, swapchain_extent_.height);
+
+  swapchain_ =
+      vka::create_swapchain(surface_format_, swapchain_extent_, capabilities,
+                            *device_, *surface_, *swapchain_);
+
+  std::vector<vk::Image> swapchain_images =
+      (*device_).getSwapchainImagesKHR(*swapchain_);
+
+  swapchain_image_views_ = vka::create_swapchain_image_views(
+      *device_, swapchain_images, surface_format_);
+
+  std::vector<vk::ImageView> swapchain_image_view_pointers;
+  for (const auto &image_view : swapchain_image_views_) {
+    swapchain_image_view_pointers.push_back(*image_view);
+  }
+
+  render_pass_ = vka::create_render_pass(*device_, surface_format_.format);
+
+  graphics_pipeline_ =
+      vka::create_graphics_pipeline(*device_, *render_pass_, swapchain_extent_);
+
+  framebuffers_ =
+      vka::create_framebuffers(*device_, *render_pass_, swapchain_extent_,
+                               swapchain_image_view_pointers);
+
+  std::vector<vk::Framebuffer> framebuffer_pointers;
+  for (const auto &framebuffer : framebuffers_) {
+    framebuffer_pointers.push_back(*framebuffer);
+  }
+
+  command_buffers_ = vka::create_command_buffers(
+      *device_, *command_pool_, static_cast<uint32_t>(framebuffers_.size()));
+
+  std::vector<vk::CommandBuffer> command_buffer_pointers;
+  for (const auto &command_buffer : command_buffers_) {
+    command_buffer_pointers.push_back(*command_buffer);
+  }
+
+  vka::record_command_buffers(*device_, command_buffer_pointers, *render_pass_,
+                              *graphics_pipeline_, framebuffer_pointers,
+                              swapchain_extent_);
+}
+void VulkanController::draw() {
+  std::vector<vk::CommandBuffer> command_buffer_pointers;
+  for (const auto &command_buffer : command_buffers_) {
+    command_buffer_pointers.push_back(*command_buffer);
+  }
+  vka::draw_frame(*device_, *swapchain_, command_buffer_pointers, queue_index_);
+}
+void VulkanController::release_swapchain() {
+  for (auto &framebuffer : framebuffers_) {
+    framebuffer.release();
+  }
+
+  for (auto &command_buffer : command_buffers_) {
+    command_buffer.release();
+  }
+
+  graphics_pipeline_.release();
+  render_pass_.release();
+
+  for (auto &image_view : swapchain_image_views_) {
+    image_view.release();
+  }
+
+  swapchain_.release();
+}
+void VulkanController::release() {
+  release_swapchain();
+  command_pool_.release();
+  device_.release();
+  surface_.release();
+  instance_.release();
+}
+void TriangleApplication::run() {
+  const std::string application_name = "Triangle";
+  int width = 500;
+  int height = 500;
+
+  glfwInit();
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  window_ = glfwCreateWindow(width, height, application_name.c_str(), nullptr,
+                             nullptr);
+  glfwSetWindowUserPointer(window_, this);
+  glfwSetWindowSizeCallback(window_, TriangleApplication::resize);
+
+  std::vector<const char *> extension_names;
+  uint32_t glfw_extension_count = 0;
+  const char **glfw_extensions =
+      glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+  for (uint32_t i = 0; i < glfw_extension_count; ++i) {
+    extension_names.push_back(glfw_extensions[i]);
+  }
+
+  const vk::ApplicationInfo application_info =
+      vka::create_application_info(application_name, {0, 1, 0});
+  vk::UniqueInstance instance =
+      vka::create_instance(application_info, extension_names);
+
+  VkSurfaceKHR raw_surface;
+  glfwCreateWindowSurface(*instance, window_, nullptr, &raw_surface);
+  vk::UniqueSurfaceKHR surface(raw_surface);
+
+  vulkan_controller_.initialize(std::move(instance), std::move(surface),
+                                vk::Extent2D(width, height));
+
+  while (!glfwWindowShouldClose(window_)) {
+    glfwPollEvents();
+    vulkan_controller_.draw();
+  }
+
+  glfwDestroyWindow(window_);
+  glfwTerminate();
+}
+void TriangleApplication::recreate_swapchain() {
+  int width, height;
+  glfwGetWindowSize(window_, &width, &height);
+  vulkan_controller_.recreate_swapchain(vk::Extent2D(width, height));
+}
+void TriangleApplication::resize(GLFWwindow *window, int width, int height) {
+  auto application =
+      reinterpret_cast<TriangleApplication *>(glfwGetWindowUserPointer(window));
+  application->recreate_swapchain();
 }
 }
