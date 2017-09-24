@@ -21,6 +21,7 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 
+namespace vka {
 class VulkanController {
 public:
   ~VulkanController();
@@ -48,8 +49,6 @@ private:
   std::vector<vk::UniqueCommandBuffer> command_buffers_;
   std::vector<vk::UniqueFramebuffer> framebuffers_;
 };
-
-namespace vka {
 struct Version {
   uint32_t major;
   uint32_t minor;

@@ -17,6 +17,7 @@
 #include "triangle.hpp"
 #include <fstream>
 
+namespace vka {
 VulkanController::~VulkanController() {
   if (device_) {
     (*device_).waitIdle();
@@ -135,8 +136,6 @@ void VulkanController::release() {
   surface_.release();
   instance_.release();
 }
-
-namespace vka {
 vk::ApplicationInfo create_application_info(const std::string name,
                                             const Version version) {
   vk::ApplicationInfo info;

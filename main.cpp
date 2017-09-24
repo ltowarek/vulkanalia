@@ -15,7 +15,6 @@
  */
 
 #include "triangle.hpp"
-#include <GLFW/glfw3.h>
 
 class TriangleApplication {
 public:
@@ -71,7 +70,7 @@ public:
   }
 
 private:
-  VulkanController vulkan_controller_;
+  vka::VulkanController vulkan_controller_;
   GLFWwindow *window_;
 };
 
