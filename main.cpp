@@ -14,33 +14,36 @@
  *limitations under the License.
  */
 
+#define GLFW_INCLUDE_VULKAN
 #include "triangle.hpp"
+#include <GLFW/glfw3.h>
 
 int main(int argc, char *argv[]) {
   const std::string application_name = "Triangle";
+  int width = 500;
+  int height = 500;
+
+  glfwInit();
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  GLFWwindow *window = glfwCreateWindow(width, height, application_name.c_str(),
+                                        nullptr, nullptr);
+
   const vk::ApplicationInfo application_info =
       vka::create_application_info(application_name, {0, 1, 0});
   const vk::UniqueInstance instance = vka::create_instance(application_info);
 
-  vka::WindowManager window_manager(application_name);
-  const vk::UniqueSurfaceKHR surface = vka::create_surface(
-      *instance, window_manager.hInstance(), window_manager.hWnd());
-
-  const vk::Extent2D swapchain_extent(500, 500);
+  VkSurfaceKHR raw_surface;
+  glfwCreateWindowSurface(*instance, window, nullptr, &raw_surface);
+  vk::UniqueSurfaceKHR surface(raw_surface);
 
   VulkanController vulkan_controller;
-  vulkan_controller.initialize(*instance, *surface, swapchain_extent);
+  vulkan_controller.initialize(*instance, *surface,
+                               vk::Extent2D(width, height));
 
-  MSG msg;
-  bool quit = false;
-  while (!quit) {
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-      TranslateMessage(&msg);
-      DispatchMessage(&msg);
-      if (msg.message == WM_QUIT) {
-        quit = true;
-      }
-    }
+  while (!glfwWindowShouldClose(window)) {
+    glfwPollEvents();
     vulkan_controller.draw();
   }
+
+  surface.release();
 }

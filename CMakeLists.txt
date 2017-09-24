@@ -27,14 +27,27 @@ add_subdirectory("${CMAKE_BINARY_DIR}/external/googletest-src"
 add_library(GTest::GTest ALIAS gtest)
 add_library(GTest::Main ALIAS gtest_main)
 
+configure_file(cmake/glfw.cmake.in ${CMAKE_BINARY_DIR}/download/glfw/CMakeLists.txt)
+execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" . 
+                WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/download/glfw")
+execute_process(COMMAND "${CMAKE_COMMAND}" --build . 
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/download/glfw")
+
 find_package(Vulkan REQUIRED)
+
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)  
+add_subdirectory("${CMAKE_BINARY_DIR}/external/glfw-src"
+                 "${CMAKE_BINARY_DIR}/external/glfw-build")
+add_library(GLFW::GLFW ALIAS glfw)
 
 add_library(triangle triangle.hpp triangle.cpp)
 add_library(vka::triangle ALIAS triangle)
 target_link_libraries(triangle Vulkan::Vulkan)
 
 add_executable(vulkanalia main.cpp)
-target_link_libraries(vulkanalia vka::triangle)
+target_link_libraries(vulkanalia GLFW::GLFW vka::triangle)
 
 add_custom_command(TARGET vulkanalia POST_BUILD 
                    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
