@@ -25,28 +25,29 @@
 class VulkanController {
 public:
   ~VulkanController();
-  void initialize(const vk::Instance &instance, const vk::SurfaceKHR &surface,
+  void initialize(vk::UniqueInstance instance, vk::UniqueSurfaceKHR surface,
                   const vk::Extent2D swapchain_extent);
   void recreate_swapchain(vk::Extent2D swapchain_extent);
+  void release();
   void release_swapchain();
   void draw();
 
 private:
   vk::PhysicalDevice physical_device_;
-  vk::UniqueDevice device_;
-  vk::UniqueCommandPool command_pool_;
   uint32_t queue_index_;
-
-  vk::SurfaceKHR surface_;
   vk::SurfaceFormatKHR surface_format_;
   vk::Extent2D swapchain_extent_;
+
+  vk::UniqueInstance instance_;
+  vk::UniqueSurfaceKHR surface_;
+  vk::UniqueDevice device_;
+  vk::UniqueCommandPool command_pool_;
   vk::UniqueSwapchainKHR swapchain_;
   std::vector<vk::UniqueImageView> swapchain_image_views_;
-
   vk::UniqueRenderPass render_pass_;
   vk::UniquePipeline graphics_pipeline_;
-  std::vector<vk::UniqueFramebuffer> framebuffers_;
   std::vector<vk::UniqueCommandBuffer> command_buffers_;
+  std::vector<vk::UniqueFramebuffer> framebuffers_;
 };
 
 namespace vka {
@@ -99,11 +100,10 @@ select_surface_format(const std::vector<vk::SurfaceFormatKHR> &formats);
 vk::Extent2D
 select_swapchain_extent(const vk::SurfaceCapabilitiesKHR &capabilities,
                         uint32_t &width, uint32_t &height);
-vk::UniqueSwapchainKHR
-create_swapchain(const vk::SurfaceFormatKHR &surface_format,
-                 const vk::Extent2D &extent,
-                 const vk::SurfaceCapabilitiesKHR &capabilities,
-                 const vk::Device &device, const vk::SurfaceKHR &surface);
+vk::UniqueSwapchainKHR create_swapchain(
+    const vk::SurfaceFormatKHR &surface_format, const vk::Extent2D &extent,
+    const vk::SurfaceCapabilitiesKHR &capabilities, const vk::Device &device,
+    const vk::SurfaceKHR &surface, const vk::SwapchainKHR &old_swapchain);
 std::vector<vk::UniqueImageView>
 create_swapchain_image_views(const vk::Device &device,
                              const std::vector<vk::Image> images,

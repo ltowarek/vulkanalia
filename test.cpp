@@ -101,7 +101,7 @@ public:
       const vk::Extent2D extent =
           vka::select_swapchain_extent(capabilities, width, height);
       swapchain_ = vka::create_swapchain(surface_format(), extent, capabilities,
-                                         device(), surface);
+                                         device(), surface, nullptr);
     }
     return *swapchain_;
   }
@@ -433,8 +433,10 @@ TEST(TriangleExample, CreatesSwapchainWithoutThrowingException) {
   uint32_t height = 500;
   const vk::Extent2D extent =
       vka::select_swapchain_extent(capabilities, width, height);
+  vk::SwapchainKHR old_swapchain = nullptr;
   EXPECT_NO_THROW(vka::create_swapchain(format, extent, capabilities,
-                                        VulkanCache::device(), *surface));
+                                        VulkanCache::device(), *surface,
+                                        old_swapchain));
 }
 
 TEST(TriangleExample, CreatesSwapchainImageViewsWithoutThrowingException) {

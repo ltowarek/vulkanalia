@@ -21,23 +21,28 @@ VulkanController::~VulkanController() {
   if (device_) {
     (*device_).waitIdle();
   }
+  release();
 }
-void VulkanController::initialize(const vk::Instance &instance,
-                                  const vk::SurfaceKHR &surface,
+void VulkanController::initialize(vk::UniqueInstance instance,
+                                  vk::UniqueSurfaceKHR surface,
                                   const vk::Extent2D swapchain_extent) {
+  instance_ = std::move(instance);
+  surface_ = std::move(surface);
+  swapchain_extent_ = swapchain_extent;
+
   const std::vector<vk::PhysicalDevice> devices =
-      instance.enumeratePhysicalDevices();
+      (*instance_).enumeratePhysicalDevices();
   physical_device_ = vka::select_physical_device(devices);
 
   const std::vector<vk::SurfaceFormatKHR> formats =
-      physical_device_.getSurfaceFormatsKHR(surface);
+      physical_device_.getSurfaceFormatsKHR(*surface_);
   surface_format_ = vka::select_surface_format(formats);
 
   const std::vector<vk::QueueFamilyProperties> queue_family_properties =
       physical_device_.getQueueFamilyProperties();
 
   const std::vector<vk::Bool32> presentation_support =
-      vka::get_presentation_support(physical_device_, surface,
+      vka::get_presentation_support(physical_device_, *surface_,
                                     queue_family_properties.size());
 
   queue_index_ = vka::find_graphics_and_presentation_queue_family_index(
@@ -47,21 +52,19 @@ void VulkanController::initialize(const vk::Instance &instance,
 
   command_pool_ = vka::create_command_pool(*device_, queue_index_);
 
-  surface_ = surface;
-  swapchain_extent_ = swapchain_extent;
-
   recreate_swapchain(swapchain_extent_);
 }
 void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
-  (*device_).waitIdle();
+  swapchain_extent_ = swapchain_extent;
 
   const vk::SurfaceCapabilitiesKHR capabilities =
-      physical_device_.getSurfaceCapabilitiesKHR(surface_);
+      physical_device_.getSurfaceCapabilitiesKHR(*surface_);
   swapchain_extent_ = vka::select_swapchain_extent(
-      capabilities, swapchain_extent.width, swapchain_extent.height);
+      capabilities, swapchain_extent_.width, swapchain_extent_.height);
 
-  swapchain_ = vka::create_swapchain(surface_format_, swapchain_extent_,
-                                     capabilities, *device_, surface_);
+  swapchain_ =
+      vka::create_swapchain(surface_format_, swapchain_extent_, capabilities,
+                            *device_, *surface_, *swapchain_);
 
   std::vector<vk::Image> swapchain_images =
       (*device_).getSwapchainImagesKHR(*swapchain_);
@@ -124,7 +127,14 @@ void VulkanController::release_swapchain() {
   }
 
   swapchain_.release();
-};
+}
+void VulkanController::release() {
+  release_swapchain();
+  command_pool_.release();
+  device_.release();
+  surface_.release();
+  instance_.release();
+}
 
 namespace vka {
 WindowManager::WindowManager(const std::string &name) : class_name_(name) {
@@ -303,11 +313,10 @@ select_swapchain_extent(const vk::SurfaceCapabilitiesKHR &capabilities,
   }
   return extent;
 }
-vk::UniqueSwapchainKHR
-create_swapchain(const vk::SurfaceFormatKHR &surface_format,
-                 const vk::Extent2D &extent,
-                 const vk::SurfaceCapabilitiesKHR &capabilities,
-                 const vk::Device &device, const vk::SurfaceKHR &surface) {
+vk::UniqueSwapchainKHR create_swapchain(
+    const vk::SurfaceFormatKHR &surface_format, const vk::Extent2D &extent,
+    const vk::SurfaceCapabilitiesKHR &capabilities, const vk::Device &device,
+    const vk::SurfaceKHR &surface, const vk::SwapchainKHR &old_swapchain) {
   vk::SwapchainCreateInfoKHR info;
   info.surface = surface;
   info.minImageCount = capabilities.minImageCount;
@@ -321,7 +330,7 @@ create_swapchain(const vk::SurfaceFormatKHR &surface_format,
   info.queueFamilyIndexCount = 0;
   info.pQueueFamilyIndices = nullptr;
   info.presentMode = vk::PresentModeKHR::eFifo;
-  info.oldSwapchain = nullptr;
+  info.oldSwapchain = old_swapchain;
   info.clipped = VK_TRUE;
   info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
   return device.createSwapchainKHRUnique(info);
