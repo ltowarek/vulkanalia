@@ -15,7 +15,6 @@
  */
 
 #include "triangle.hpp"
-#include "ui_main_window.h"
 #include <fstream>
 
 VulkanController::~VulkanController() {
@@ -124,12 +123,6 @@ void VulkanController::release_swapchain() {
 
   swapchain_.release();
 };
-
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow) {
-  ui->setupUi(this);
-};
-MainWindow::~MainWindow() { delete ui; }
 
 namespace vka {
 WindowManager::WindowManager(const std::string &name) : class_name_(name) {

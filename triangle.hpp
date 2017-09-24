@@ -20,7 +20,6 @@
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
-#include <QMainWindow>
 #include <vulkan/vulkan.hpp>
 
 class VulkanController {
@@ -48,19 +47,6 @@ private:
   vk::UniquePipeline graphics_pipeline_;
   std::vector<vk::UniqueFramebuffer> framebuffers_;
   std::vector<vk::UniqueCommandBuffer> command_buffers_;
-};
-
-namespace Ui {
-class MainWindow;
-}
-class MainWindow : public QMainWindow {
-  Q_OBJECT
-public:
-  explicit MainWindow(QWidget *parent = 0);
-  ~MainWindow();
-
-private:
-  Ui::MainWindow *ui;
 };
 
 namespace vka {

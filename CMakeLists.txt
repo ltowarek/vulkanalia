@@ -29,14 +29,9 @@ add_library(GTest::Main ALIAS gtest_main)
 
 find_package(Vulkan REQUIRED)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
-find_package(Qt5Widgets REQUIRED)
-
 add_library(triangle triangle.hpp triangle.cpp)
 add_library(vka::triangle ALIAS triangle)
-target_link_libraries(triangle Qt5::Widgets Vulkan::Vulkan)
+target_link_libraries(triangle Vulkan::Vulkan)
 
 add_executable(vulkanalia main.cpp)
 target_link_libraries(vulkanalia vka::triangle)
@@ -48,18 +43,6 @@ add_custom_command(TARGET vulkanalia POST_BUILD
 add_custom_command(TARGET vulkanalia POST_BUILD 
                    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
                    "${CMAKE_SOURCE_DIR}/frag.spv"              
-                   $<TARGET_FILE_DIR:vulkanalia>)
-add_custom_command(TARGET vulkanalia POST_BUILD
-                   COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-                   $<TARGET_FILE:Qt5::Widgets>
-                   $<TARGET_FILE_DIR:vulkanalia>)
-add_custom_command(TARGET vulkanalia POST_BUILD
-                   COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-                   $<TARGET_FILE:Qt5::Core>
-                   $<TARGET_FILE_DIR:vulkanalia>)
-add_custom_command(TARGET vulkanalia POST_BUILD
-                   COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-                   $<TARGET_FILE:Qt5::Gui>
                    $<TARGET_FILE_DIR:vulkanalia>)
 
 add_executable(vulkanalia_test test.cpp)
