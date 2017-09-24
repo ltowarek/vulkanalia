@@ -23,6 +23,33 @@
 #include <QMainWindow>
 #include <vulkan/vulkan.hpp>
 
+class VulkanController {
+public:
+  ~VulkanController();
+  void initialize(const vk::Instance &instance, const vk::SurfaceKHR &surface,
+                  const vk::Extent2D swapchain_extent);
+  void recreate_swapchain(vk::Extent2D swapchain_extent);
+  void release_swapchain();
+  void draw();
+
+private:
+  vk::PhysicalDevice physical_device_;
+  vk::UniqueDevice device_;
+  vk::UniqueCommandPool command_pool_;
+  uint32_t queue_index_;
+
+  vk::SurfaceKHR surface_;
+  vk::SurfaceFormatKHR surface_format_;
+  vk::Extent2D swapchain_extent_;
+  vk::UniqueSwapchainKHR swapchain_;
+  std::vector<vk::UniqueImageView> swapchain_image_views_;
+
+  vk::UniqueRenderPass render_pass_;
+  vk::UniquePipeline graphics_pipeline_;
+  std::vector<vk::UniqueFramebuffer> framebuffers_;
+  std::vector<vk::UniqueCommandBuffer> command_buffers_;
+};
+
 namespace Ui {
 class MainWindow;
 }
