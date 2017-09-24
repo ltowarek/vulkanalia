@@ -18,13 +18,43 @@
 #include "gtest/gtest.h"
 #include <fstream>
 
-class VulkanCache {
+class WindowManager {
 public:
+  WindowManager() {
+    glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    window_ = glfwCreateWindow(500, 500, "Test", nullptr, nullptr);
+  }
+  ~WindowManager() { glfwDestroyWindow(window_); }
+  std::vector<const char *> extension_names() {
+    std::vector<const char *> extension_names;
+    uint32_t glfw_extension_count = 0;
+    const char **glfw_extensions =
+        glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+    for (uint32_t i = 0; i < glfw_extension_count; ++i) {
+      extension_names.push_back(glfw_extensions[i]);
+    }
+    return extension_names;
+  }
+  VkSurfaceKHR surface(VkInstance instance) {
+    VkSurfaceKHR surface;
+    glfwCreateWindowSurface(instance, window_, nullptr, &surface);
+    return surface;
+  }
+
+private:
+  GLFWwindow *window_;
+};
+
+class TriangleTest : public ::testing::Test {
+protected:
+  static void TearDownTestCase() { release(); }
   static const vk::Instance &instance() {
     if (!instance_) {
       vk::ApplicationInfo application_info =
           vka::create_application_info("Test", {1, 2, 3});
-      instance_ = vka::create_instance(application_info);
+      instance_ = vka::create_instance(application_info,
+                                       window_manager_.extension_names());
     }
     return *instance_;
   }
@@ -52,13 +82,10 @@ public:
   }
   static const vk::SurfaceKHR &surface() {
     if (!surface_) {
-      static vka::WindowManager manager("Application Name");
-      surface_ = vka::create_surface(VulkanCache::instance(),
-                                     manager.hInstance(), manager.hWnd());
+      surface_ = vk::UniqueSurfaceKHR(window_manager_.surface(instance()));
       std::vector<vk::Bool32> presentation_support =
-          vka::get_presentation_support(
-              VulkanCache::physical_device(), *surface_,
-              VulkanCache::queue_family_properties().size());
+          vka::get_presentation_support(physical_device(), *surface_,
+                                        queue_family_properties().size());
     }
     return *surface_;
   }
@@ -78,30 +105,30 @@ public:
     return queue_family_properties_;
   }
   static const vk::SurfaceFormatKHR surface_format() {
-    const vk::SurfaceKHR surface = VulkanCache::surface();
+    const vk::SurfaceKHR s = surface();
     const std::vector<vk::SurfaceFormatKHR> formats =
-        physical_device().getSurfaceFormatsKHR(surface);
+        physical_device().getSurfaceFormatsKHR(s);
     return vka::select_surface_format(formats);
   }
   static const vk::Extent2D swapchain_extent() {
-    const vk::SurfaceKHR surface = VulkanCache::surface();
+    const vk::SurfaceKHR s = surface();
     const vk::SurfaceCapabilitiesKHR capabilities =
-        physical_device().getSurfaceCapabilitiesKHR(surface);
+        physical_device().getSurfaceCapabilitiesKHR(s);
     uint32_t width = 500;
     uint32_t height = 500;
     return vka::select_swapchain_extent(capabilities, width, height);
   }
   static const vk::SwapchainKHR &swapchain() {
     if (!swapchain_) {
-      const vk::SurfaceKHR surface = VulkanCache::surface();
+      const vk::SurfaceKHR s = surface();
       const vk::SurfaceCapabilitiesKHR capabilities =
-          physical_device().getSurfaceCapabilitiesKHR(surface);
+          physical_device().getSurfaceCapabilitiesKHR(s);
       uint32_t width = 500;
       uint32_t height = 500;
       const vk::Extent2D extent =
           vka::select_swapchain_extent(capabilities, width, height);
       swapchain_ = vka::create_swapchain(surface_format(), extent, capabilities,
-                                         device(), surface, nullptr);
+                                         device(), s, nullptr);
     }
     return *swapchain_;
   }
@@ -158,6 +185,31 @@ public:
     }
     return command_buffers;
   }
+  static void release() {
+    for (auto &framebuffer : framebuffers_) {
+      framebuffer.release();
+    }
+
+    for (auto &command_buffer : command_buffers_) {
+      command_buffer.release();
+    }
+
+    graphics_pipeline_.release();
+    render_pass_.release();
+
+    for (auto &image_view : swapchain_image_views_) {
+      image_view.release();
+    }
+
+    swapchain_.release();
+
+    command_pool_.release();
+    device_.release();
+    surface_.release();
+    instance_.release();
+    surface_.release();
+    instance_.release();
+  }
 
 private:
   static vk::UniqueInstance instance_;
@@ -174,59 +226,51 @@ private:
   static vk::UniquePipeline graphics_pipeline_;
   static std::vector<vk::UniqueFramebuffer> framebuffers_;
   static std::vector<vk::UniqueCommandBuffer> command_buffers_;
+  static WindowManager window_manager_;
 };
 
-vk::UniqueInstance VulkanCache::instance_ = vk::UniqueInstance();
-vk::UniqueDevice VulkanCache::device_ = vk::UniqueDevice();
-uint32_t VulkanCache::queue_index_ = UINT32_MAX;
-vk::UniqueCommandPool VulkanCache::command_pool_ = vk::UniqueCommandPool();
-vk::UniqueSurfaceKHR VulkanCache::surface_ = vk::UniqueSurfaceKHR();
-vk::PhysicalDevice VulkanCache::physical_device_ = vk::PhysicalDevice();
-std::vector<vk::QueueFamilyProperties> VulkanCache::queue_family_properties_ =
+vk::UniqueInstance TriangleTest::instance_ = vk::UniqueInstance();
+vk::UniqueDevice TriangleTest::device_ = vk::UniqueDevice();
+uint32_t TriangleTest::queue_index_ = UINT32_MAX;
+vk::UniqueCommandPool TriangleTest::command_pool_ = vk::UniqueCommandPool();
+vk::UniqueSurfaceKHR TriangleTest::surface_ = vk::UniqueSurfaceKHR();
+vk::PhysicalDevice TriangleTest::physical_device_ = vk::PhysicalDevice();
+std::vector<vk::QueueFamilyProperties> TriangleTest::queue_family_properties_ =
     std::vector<vk::QueueFamilyProperties>();
-vk::UniqueSwapchainKHR VulkanCache::swapchain_ = vk::UniqueSwapchainKHR();
-std::vector<vk::Image> VulkanCache::swapchain_images_ =
+vk::UniqueSwapchainKHR TriangleTest::swapchain_ = vk::UniqueSwapchainKHR();
+std::vector<vk::Image> TriangleTest::swapchain_images_ =
     std::vector<vk::Image>();
-std::vector<vk::UniqueImageView> VulkanCache::swapchain_image_views_ =
+std::vector<vk::UniqueImageView> TriangleTest::swapchain_image_views_ =
     std::vector<vk::UniqueImageView>();
-vk::UniqueRenderPass VulkanCache::render_pass_ = vk::UniqueRenderPass();
-vk::UniquePipeline VulkanCache::graphics_pipeline_ = vk::UniquePipeline();
-std::vector<vk::UniqueFramebuffer> VulkanCache::framebuffers_ =
+vk::UniqueRenderPass TriangleTest::render_pass_ = vk::UniqueRenderPass();
+vk::UniquePipeline TriangleTest::graphics_pipeline_ = vk::UniquePipeline();
+std::vector<vk::UniqueFramebuffer> TriangleTest::framebuffers_ =
     std::vector<vk::UniqueFramebuffer>();
-std::vector<vk::UniqueCommandBuffer> VulkanCache::command_buffers_ =
+std::vector<vk::UniqueCommandBuffer> TriangleTest::command_buffers_ =
     std::vector<vk::UniqueCommandBuffer>();
+WindowManager TriangleTest::window_manager_ = WindowManager();
 
-TEST(WindowManager,
-     ReturnsNonNullHInstanceGivenModuleHandleIsSuccessfullyRetrieved) {
-  const std::string name = "Application Name";
-  vka::WindowManager manager(name);
-  EXPECT_TRUE(manager.hInstance());
-}
-
-TEST(WindowManager, ReturnsNonNullHWndGivenWindowIsSuccessfullyCreated) {
-  const std::string name = "Application Name";
-  vka::WindowManager manager(name);
-  EXPECT_TRUE(manager.hWnd());
-}
-
-TEST(TriangleExample, CreatesInstanceWithoutThrowingException) {
+TEST_F(TriangleTest, CreatesInstanceWithoutThrowingException) {
   vk::ApplicationInfo application_info =
       vka::create_application_info("Test", {1, 2, 3});
-  EXPECT_NO_THROW(vka::create_instance(application_info));
+  std::vector<const char *> required_extensions_names = {
+      VK_KHR_SURFACE_EXTENSION_NAME};
+  EXPECT_NO_THROW(
+      vka::create_instance(application_info, required_extensions_names));
 }
 
-TEST(TriangleExample, SelectsNonEmptyPhysicalDeviceIfAnyIsAvailable) {
+TEST_F(TriangleTest, SelectsNonEmptyPhysicalDeviceIfAnyIsAvailable) {
   std::vector<vk::PhysicalDevice> devices =
-      VulkanCache::instance().enumeratePhysicalDevices();
+      instance().enumeratePhysicalDevices();
   EXPECT_NE(vka::select_physical_device(devices), vk::PhysicalDevice());
 }
 
-TEST(TriangleExample, SelectsEmptyPhysicalDeviceIfNoneIsAvailable) {
+TEST_F(TriangleTest, SelectsEmptyPhysicalDeviceIfNoneIsAvailable) {
   std::vector<vk::PhysicalDevice> devices;
   EXPECT_EQ(vka::select_physical_device(devices), vk::PhysicalDevice());
 }
 
-TEST(TriangleExample, FindsGraphicsQueueFamilyIndexGivenItExists) {
+TEST_F(TriangleTest, FindsGraphicsQueueFamilyIndexGivenItExists) {
   vk::QueueFamilyProperties compute_queue;
   compute_queue.queueFlags = vk::QueueFlagBits::eCompute;
 
@@ -239,16 +283,16 @@ TEST(TriangleExample, FindsGraphicsQueueFamilyIndexGivenItExists) {
   EXPECT_EQ(vka::find_graphics_queue_family_index(queue_family_properties), 1);
 }
 
-TEST(TriangleExample,
-     ReturnsUINT32MaxValueGivenGraphicsQueueFamilyDoesNotExist) {
+TEST_F(TriangleTest,
+       ReturnsUINT32MaxValueGivenGraphicsQueueFamilyDoesNotExist) {
   std::vector<vk::QueueFamilyProperties> queue_family_properties;
   EXPECT_EQ(vka::find_graphics_queue_family_index(queue_family_properties),
             UINT32_MAX);
 }
 
-TEST(TriangleExample, CreatesLogicalDeviceWithoutThrowingException) {
+TEST_F(TriangleTest, CreatesLogicalDeviceWithoutThrowingException) {
   const std::vector<vk::PhysicalDevice> devices =
-      VulkanCache::instance().enumeratePhysicalDevices();
+      instance().enumeratePhysicalDevices();
   const vk::PhysicalDevice physical_device =
       vka::select_physical_device(devices);
   const std::vector<vk::QueueFamilyProperties> queues =
@@ -257,34 +301,24 @@ TEST(TriangleExample, CreatesLogicalDeviceWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_device(physical_device, queue_index));
 }
 
-TEST(TriangleExample, CreatesCommandPoolWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::create_command_pool(VulkanCache::device(),
-                                           VulkanCache::queue_index()));
+TEST_F(TriangleTest, CreatesCommandPoolWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_command_pool(device(), queue_index()));
 }
 
-TEST(TriangleExample, CreatesCommandBuffersWithoutThrowingException) {
+TEST_F(TriangleTest, CreatesCommandBuffersWithoutThrowingException) {
   const uint32_t command_buffer_count = 3;
-  EXPECT_NO_THROW(vka::create_command_buffers(VulkanCache::device(),
-                                              VulkanCache::command_pool(), 3));
+  EXPECT_NO_THROW(vka::create_command_buffers(device(), command_pool(), 3));
 }
 
-TEST(TriangleExample, CreatesSurfaceWithoutThrowingException) {
-  vka::WindowManager manager("Application Name");
-  EXPECT_NO_THROW(vka::create_surface(VulkanCache::instance(),
-                                      manager.hInstance(), manager.hWnd()));
-}
-
-TEST(TriangleExample,
-     ReturnsVectorWithPresentationSupportForEachAvailableQueueFamily) {
+TEST_F(TriangleTest,
+       ReturnsVectorWithPresentationSupportForEachAvailableQueueFamily) {
   std::vector<vk::Bool32> presentation_support = vka::get_presentation_support(
-      VulkanCache::physical_device(), VulkanCache::surface(),
-      VulkanCache::queue_family_properties().size());
-  EXPECT_EQ(presentation_support.size(),
-            VulkanCache::queue_family_properties().size());
+      physical_device(), surface(), queue_family_properties().size());
+  EXPECT_EQ(presentation_support.size(), queue_family_properties().size());
 }
 
-TEST(TriangleExample,
-     FindsQueueFamilyIndexWithGraphicsAndPresentationSupportGivenItExists) {
+TEST_F(TriangleTest,
+       FindsQueueFamilyIndexWithGraphicsAndPresentationSupportGivenItExists) {
   vk::QueueFamilyProperties compute_queue;
   compute_queue.queueFlags = vk::QueueFlagBits::eCompute;
 
@@ -301,8 +335,8 @@ TEST(TriangleExample,
             3);
 }
 
-TEST(
-    TriangleExample,
+TEST_F(
+    TriangleTest,
     ReturnsUINT32MaxValueGivenGraphicsQueueFamilyDoesNotExistAndQueueSupportsPresentation) {
   vk::QueueFamilyProperties compute_queue;
   compute_queue.queueFlags = vk::QueueFlagBits::eCompute;
@@ -316,8 +350,8 @@ TEST(
             UINT32_MAX);
 }
 
-TEST(
-    TriangleExample,
+TEST_F(
+    TriangleTest,
     ReturnsUINT32MaxValueGivenGraphicsQueueFamilyExistsAndQueueDoesNotSupportPresentation) {
   vk::QueueFamilyProperties graphics_queue;
   graphics_queue.queueFlags = vk::QueueFlagBits::eGraphics;
@@ -331,8 +365,8 @@ TEST(
             UINT32_MAX);
 }
 
-TEST(
-    TriangleExample,
+TEST_F(
+    TriangleTest,
     ReturnsUINT32MaxValueGivenGraphicsQueueFamilyDoesNotExistAndQueueDoesNotSupportPresentation) {
   vk::QueueFamilyProperties compute_queue;
   compute_queue.queueFlags = vk::QueueFlagBits::eCompute;
@@ -346,7 +380,7 @@ TEST(
             UINT32_MAX);
 }
 
-TEST(TriangleExample, ReturnsUINT32MaxValueGivenInputVectorsHaveDifferentSize) {
+TEST_F(TriangleTest, ReturnsUINT32MaxValueGivenInputVectorsHaveDifferentSize) {
   vk::QueueFamilyProperties graphics_queue;
   graphics_queue.queueFlags = vk::QueueFlagBits::eGraphics;
 
@@ -359,8 +393,8 @@ TEST(TriangleExample, ReturnsUINT32MaxValueGivenInputVectorsHaveDifferentSize) {
             UINT32_MAX);
 }
 
-TEST(
-    TriangleExample,
+TEST_F(
+    TriangleTest,
     SelectsB8G8R8A8UnormColorFormatAndSRGBNonlinearColorSpaceGivenThereAreNoPreferedFormat) {
   std::vector<vk::SurfaceFormatKHR> formats = {
       {vk::Format::eUndefined, vk::ColorSpaceKHR::eAdobergbLinearEXT}};
@@ -369,15 +403,16 @@ TEST(
   EXPECT_EQ(vka::select_surface_format(formats), expected_format);
 }
 
-TEST(TriangleExample, SelectsFirstSurfaceFormatGivenThereArePreferedFormats) {
+TEST_F(TriangleTest, SelectsFirstSurfaceFormatGivenThereArePreferedFormats) {
   std::vector<vk::SurfaceFormatKHR> formats = {
       {vk::Format::eA1R5G5B5UnormPack16, vk::ColorSpaceKHR::eAdobergbLinearEXT},
       {vk::Format::eAstc10x5SrgbBlock, vk::ColorSpaceKHR::eBt709LinearEXT}};
   EXPECT_EQ(vka::select_surface_format(formats), formats[0]);
 }
 
-TEST(TriangleExample,
-     ReturnsSwapchainExtentEqualToSurfaceCapabilitiesGivenCurrentExtentIsSet) {
+TEST_F(
+    TriangleTest,
+    ReturnsSwapchainExtentEqualToSurfaceCapabilitiesGivenCurrentExtentIsSet) {
   vk::SurfaceCapabilitiesKHR capabilities = {};
   capabilities.currentExtent = vk::Extent2D(1, 2);
   uint32_t width = 0;
@@ -386,7 +421,7 @@ TEST(TriangleExample,
             capabilities.currentExtent);
 }
 
-TEST(TriangleExample, SetsWidthAndHeightGivenCurrentExtentIsSet) {
+TEST_F(TriangleTest, SetsWidthAndHeightGivenCurrentExtentIsSet) {
   vk::SurfaceCapabilitiesKHR capabilities = {};
   capabilities.currentExtent = vk::Extent2D(1, 2);
   uint32_t width = 0;
@@ -395,8 +430,9 @@ TEST(TriangleExample, SetsWidthAndHeightGivenCurrentExtentIsSet) {
   EXPECT_EQ(vk::Extent2D(width, height), capabilities.currentExtent);
 }
 
-TEST(TriangleExample,
-     ReturnsSwapchainExtentEqualToWidthAndHeightGivenCurrentExtentIsUndefined) {
+TEST_F(
+    TriangleTest,
+    ReturnsSwapchainExtentEqualToWidthAndHeightGivenCurrentExtentIsUndefined) {
   vk::SurfaceCapabilitiesKHR capabilities = {};
   capabilities.currentExtent = vk::Extent2D(UINT32_MAX, UINT32_MAX);
   uint32_t width = 1;
@@ -405,8 +441,8 @@ TEST(TriangleExample,
             vk::Extent2D(width, height));
 }
 
-TEST(TriangleExample,
-     LeavesWidthAndHeightUnchangedGivenCurrentExtentIsUndefined) {
+TEST_F(TriangleTest,
+       LeavesWidthAndHeightUnchangedGivenCurrentExtentIsUndefined) {
   vk::SurfaceCapabilitiesKHR capabilities = {};
   capabilities.currentExtent = vk::Extent2D(UINT32_MAX, UINT32_MAX);
   uint32_t width = 1;
@@ -417,35 +453,32 @@ TEST(TriangleExample,
   EXPECT_EQ(vk::Extent2D(width, height), vk::Extent2D(old_width, old_height));
 }
 
-TEST(TriangleExample, CreatesSwapchainWithoutThrowingException) {
-  vka::WindowManager manager("Application Name");
-  const vk::UniqueSurfaceKHR surface = vka::create_surface(
-      VulkanCache::instance(), manager.hInstance(), manager.hWnd());
+TEST_F(TriangleTest, CreatesSwapchainWithoutThrowingException) {
+  WindowManager window_manager;
+  vk::UniqueSurfaceKHR surface =
+      vk::UniqueSurfaceKHR(window_manager.surface(instance()));
   std::vector<vk::Bool32> presentation_support = vka::get_presentation_support(
-      VulkanCache::physical_device(), *surface,
-      VulkanCache::queue_family_properties().size());
+      physical_device(), *surface, queue_family_properties().size());
   const vk::SurfaceCapabilitiesKHR capabilities =
-      VulkanCache::physical_device().getSurfaceCapabilitiesKHR(*surface);
+      physical_device().getSurfaceCapabilitiesKHR(*surface);
   const std::vector<vk::SurfaceFormatKHR> formats =
-      VulkanCache::physical_device().getSurfaceFormatsKHR(*surface);
+      physical_device().getSurfaceFormatsKHR(*surface);
   const vk::SurfaceFormatKHR format = vka::select_surface_format(formats);
   uint32_t width = 500;
   uint32_t height = 500;
   const vk::Extent2D extent =
       vka::select_swapchain_extent(capabilities, width, height);
-  vk::SwapchainKHR old_swapchain = nullptr;
-  EXPECT_NO_THROW(vka::create_swapchain(format, extent, capabilities,
-                                        VulkanCache::device(), *surface,
-                                        old_swapchain));
+  EXPECT_NO_THROW(vka::create_swapchain(format, extent, capabilities, device(),
+                                        *surface, nullptr));
+  surface.release();
 }
 
-TEST(TriangleExample, CreatesSwapchainImageViewsWithoutThrowingException) {
+TEST_F(TriangleTest, CreatesSwapchainImageViewsWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_swapchain_image_views(
-      VulkanCache::device(), VulkanCache::swapchain_images(),
-      VulkanCache::surface_format()));
+      device(), swapchain_images(), surface_format()));
 }
 
-TEST(TriangleExample, ReturnsVectorOfBytesGivenFileExists) {
+TEST_F(TriangleTest, ReturnsVectorOfBytesGivenFileExists) {
   const std::string file_name = "file.txt";
   const std::string content = "Content";
   std::ofstream f;
@@ -455,57 +488,51 @@ TEST(TriangleExample, ReturnsVectorOfBytesGivenFileExists) {
   EXPECT_EQ(vka::read_file(file_name).size(), content.size());
 }
 
-TEST(TriangleExample, ReturnsVectorWithSizeEqualToZeroGivenFileDoesExist) {
+TEST_F(TriangleTest, ReturnsVectorWithSizeEqualToZeroGivenFileDoesExist) {
   EXPECT_EQ(vka::read_file("unknown").size(), 0);
 }
 
-TEST(TriangleExample, CreatesShaderModuleWithoutThrowingException) {
+TEST_F(TriangleTest, CreatesShaderModuleWithoutThrowingException) {
   const std::vector<char> code = vka::read_file("vert.spv");
-  EXPECT_NO_THROW(vka::create_shader_module(VulkanCache::device(), code));
+  EXPECT_NO_THROW(vka::create_shader_module(device(), code));
 }
 
-TEST(TriangleExample, CreatesPipelineLayoutWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::create_pipeline_layout(VulkanCache::device()));
+TEST_F(TriangleTest, CreatesPipelineLayoutWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_pipeline_layout(device()));
 }
 
-TEST(TriangleExample, CreatesRenderPassWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::create_render_pass(VulkanCache::device(),
-                                          vk::Format::eB8G8R8A8Unorm));
+TEST_F(TriangleTest, CreatesRenderPassWithoutThrowingException) {
+  EXPECT_NO_THROW(
+      vka::create_render_pass(device(), vk::Format::eB8G8R8A8Unorm));
 }
 
-TEST(TriangleExample, CreatesGraphicsPipelineWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::create_graphics_pipeline(
-      VulkanCache::device(), VulkanCache::render_pass(),
-      VulkanCache::swapchain_extent()));
+TEST_F(TriangleTest, CreatesGraphicsPipelineWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_graphics_pipeline(device(), render_pass(),
+                                                swapchain_extent()));
 }
 
-TEST(TriangleExample, CreatesFramebuffersWithoutThrowingException) {
+TEST_F(TriangleTest, CreatesFramebuffersWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_framebuffers(
-      VulkanCache::device(), VulkanCache::render_pass(),
-      VulkanCache::swapchain_extent(), VulkanCache::swapchain_image_views()));
+      device(), render_pass(), swapchain_extent(), swapchain_image_views()));
 }
 
-TEST(TriangleExample, RecordsCommandBuffersWithoutThrowingException) {
+TEST_F(TriangleTest, RecordsCommandBuffersWithoutThrowingException) {
   EXPECT_NO_THROW(vka::record_command_buffers(
-      VulkanCache::device(), VulkanCache::command_buffers(),
-      VulkanCache::render_pass(), VulkanCache::graphics_pipeline(),
-      VulkanCache::framebuffers(), VulkanCache::swapchain_extent()));
+      device(), command_buffers(), render_pass(), graphics_pipeline(),
+      framebuffers(), swapchain_extent()));
 }
 
-TEST(TriangleExample, DrawsFrameWithoutThrowingException) {
+TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
   std::vector<vk::UniqueCommandBuffer> command_buffers =
-      vka::create_command_buffers(
-          VulkanCache::device(), VulkanCache::command_pool(),
-          static_cast<uint32_t>(VulkanCache::framebuffers().size()));
+      vka::create_command_buffers(device(), command_pool(),
+                                  static_cast<uint32_t>(framebuffers().size()));
   std::vector<vk::CommandBuffer> command_buffer_pointers;
   for (const auto &command_buffer : command_buffers) {
     command_buffer_pointers.push_back(*command_buffer);
   }
-  vka::record_command_buffers(
-      VulkanCache::device(), command_buffer_pointers,
-      VulkanCache::render_pass(), VulkanCache::graphics_pipeline(),
-      VulkanCache::framebuffers(), VulkanCache::swapchain_extent());
-  EXPECT_NO_THROW(
-      vka::draw_frame(VulkanCache::device(), VulkanCache::swapchain(),
-                      command_buffer_pointers, VulkanCache::queue_index()));
+  vka::record_command_buffers(device(), command_buffer_pointers, render_pass(),
+                              graphics_pipeline(), framebuffers(),
+                              swapchain_extent());
+  EXPECT_NO_THROW(vka::draw_frame(device(), swapchain(),
+                                  command_buffer_pointers, queue_index()));
 }

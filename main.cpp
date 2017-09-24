@@ -14,7 +14,6 @@
  *limitations under the License.
  */
 
-#define GLFW_INCLUDE_VULKAN
 #include "triangle.hpp"
 #include <GLFW/glfw3.h>
 
@@ -32,9 +31,18 @@ public:
     glfwSetWindowUserPointer(window_, this);
     glfwSetWindowSizeCallback(window_, TriangleApplication::resize);
 
+    std::vector<const char *> extension_names;
+    uint32_t glfw_extension_count = 0;
+    const char **glfw_extensions =
+        glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+    for (uint32_t i = 0; i < glfw_extension_count; ++i) {
+      extension_names.push_back(glfw_extensions[i]);
+    }
+
     const vk::ApplicationInfo application_info =
         vka::create_application_info(application_name, {0, 1, 0});
-    vk::UniqueInstance instance = vka::create_instance(application_info);
+    vk::UniqueInstance instance =
+        vka::create_instance(application_info, extension_names);
 
     VkSurfaceKHR raw_surface;
     glfwCreateWindowSurface(*instance, window_, nullptr, &raw_surface);

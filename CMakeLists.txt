@@ -44,7 +44,7 @@ add_library(GLFW::GLFW ALIAS glfw)
 
 add_library(triangle triangle.hpp triangle.cpp)
 add_library(vka::triangle ALIAS triangle)
-target_link_libraries(triangle Vulkan::Vulkan)
+target_link_libraries(triangle GLFW::GLFW Vulkan::Vulkan)
 
 add_executable(vulkanalia main.cpp)
 target_link_libraries(vulkanalia GLFW::GLFW vka::triangle)

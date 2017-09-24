@@ -17,9 +17,8 @@
 #ifndef VULKANALIA_TRIANGLE
 #define VULKANALIA_TRIANGLE
 
-#ifndef VK_USE_PLATFORM_WIN32_KHR
-#define VK_USE_PLATFORM_WIN32_KHR
-#endif
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 
 class VulkanController {
@@ -51,21 +50,6 @@ private:
 };
 
 namespace vka {
-class WindowManager {
-public:
-  WindowManager(const std::string &name);
-  ~WindowManager();
-  HINSTANCE hInstance() const;
-  HWND hWnd() const;
-
-private:
-  HINSTANCE hInstance_;
-  HWND hWnd_;
-  const std::string class_name_;
-  ATOM register_window_class(HINSTANCE hInstance,
-                             const std::string &class_name);
-  HWND create_window(HINSTANCE hInstance, const std::string &class_name);
-};
 struct Version {
   uint32_t major;
   uint32_t minor;
@@ -73,7 +57,9 @@ struct Version {
 };
 vk::ApplicationInfo create_application_info(const std::string name,
                                             const Version version);
-vk::UniqueInstance create_instance(const vk::ApplicationInfo application_info);
+vk::UniqueInstance
+create_instance(const vk::ApplicationInfo application_info,
+                const std::vector<const char *> &required_extension_names);
 vk::PhysicalDevice
 select_physical_device(const std::vector<vk::PhysicalDevice> &devices);
 uint32_t find_graphics_queue_family_index(
@@ -86,8 +72,6 @@ std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool,
                        const uint32_t command_buffer_count);
-vk::UniqueSurfaceKHR create_surface(const vk::Instance &instance,
-                                    HINSTANCE hInstance, HWND hWnd);
 std::vector<vk::Bool32>
 get_presentation_support(const vk::PhysicalDevice &physical_device,
                          const vk::SurfaceKHR &surface,
