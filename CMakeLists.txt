@@ -14,6 +14,8 @@
 
 project(vulkanalia)
 cmake_minimum_required(VERSION 3.8)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 configure_file(cmake/gtest.cmake.in ${CMAKE_BINARY_DIR}/download/gtest/CMakeLists.txt)
 execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" . 
