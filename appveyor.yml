@@ -3,7 +3,7 @@ image: Visual Studio 2017
 version: 0.1.0+{build}
 
 environment:
-  VULKAN_SDK: "C:\VulkanSDK\1.0.61.1"
+  VULKAN_SDK: "C:\\VulkanSDK\\1.0.61.1"
 
 install:
   - appveyor DownloadFile https://vulkan.lunarg.com/sdk/download/1.0.61.1/windows/VulkanSDK-1.0.61.1-Installer.exe
