@@ -7,6 +7,7 @@ install:
   - export CUSTOM_CMAKE=$PWD/cmake-3.8.2-Linux-x86_64/bin/cmake
   - wget https://vulkan.lunarg.com/sdk/download/1.0.61.1/linux/vulkansdk-linux-x86_64-1.0.61.1.run
   - chmod +x vulkansdk-linux-x86_64-1.0.61.1.run
+  - ./vulkansdk-linux-x86_64-1.0.61.1.run
   - source VulkanSDK/1.0.61.1/setup-env.sh
 script:
   - mkdir build
