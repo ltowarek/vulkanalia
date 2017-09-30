@@ -185,6 +185,7 @@ protected:
     }
     return command_buffers;
   }
+  static const std::vector<vka::Vertex> vertices() { return vertices_; }
   static void release() {
     for (auto &framebuffer : framebuffers_) {
       framebuffer.release();
@@ -227,6 +228,7 @@ private:
   static std::vector<vk::UniqueFramebuffer> framebuffers_;
   static std::vector<vk::UniqueCommandBuffer> command_buffers_;
   static WindowManager window_manager_;
+  static const std::vector<vka::Vertex> vertices_;
 };
 
 vk::UniqueInstance TriangleTest::instance_ = vk::UniqueInstance();
@@ -249,6 +251,10 @@ std::vector<vk::UniqueFramebuffer> TriangleTest::framebuffers_ =
 std::vector<vk::UniqueCommandBuffer> TriangleTest::command_buffers_ =
     std::vector<vk::UniqueCommandBuffer>();
 WindowManager TriangleTest::window_manager_ = WindowManager();
+const std::vector<vka::Vertex> TriangleTest::vertices_ = {
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
 TEST_F(TriangleTest, CreatesInstanceWithoutThrowingException) {
   vk::ApplicationInfo application_info =
@@ -303,6 +309,12 @@ TEST_F(TriangleTest, CreatesLogicalDeviceWithoutThrowingException) {
 
 TEST_F(TriangleTest, CreatesCommandPoolWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_command_pool(device(), queue_index()));
+}
+
+TEST_F(TriangleTest, CreatesVertexBufferWithoutThrowingException) {
+  const uint32_t size =
+      static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
+  EXPECT_NO_THROW(vka::create_vertex_buffer(device(), size));
 }
 
 TEST_F(TriangleTest, CreatesCommandBuffersWithoutThrowingException) {

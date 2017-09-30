@@ -19,10 +19,16 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
+#include <vulkan/vulkan.hpp>
 
 namespace vka {
+struct Vertex {
+  glm::vec2 position;
+  glm::vec3 color;
+};
+vk::VertexInputBindingDescription get_binding_description();
+std::vector<vk::VertexInputAttributeDescription> get_attribute_descriptions();
 struct Version {
   uint32_t major;
   uint32_t minor;
@@ -41,6 +47,8 @@ vk::UniqueDevice create_device(const vk::PhysicalDevice &physical_device,
                                const uint32_t queue_index);
 vk::UniqueCommandPool create_command_pool(const vk::Device &device,
                                           const uint32_t queue_index);
+vk::UniqueBuffer create_vertex_buffer(const vk::Device &device,
+                                      const uint32_t size);
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool,
@@ -90,6 +98,7 @@ void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
                 const uint32_t queue_index);
 class VulkanController {
 public:
+  VulkanController();
   ~VulkanController();
   void initialize(vk::UniqueInstance instance, vk::UniqueSurfaceKHR surface,
                   const vk::Extent2D swapchain_extent);
@@ -108,12 +117,15 @@ private:
   vk::UniqueSurfaceKHR surface_;
   vk::UniqueDevice device_;
   vk::UniqueCommandPool command_pool_;
+  vk::UniqueBuffer vertex_buffer_;
   vk::UniqueSwapchainKHR swapchain_;
   std::vector<vk::UniqueImageView> swapchain_image_views_;
   vk::UniqueRenderPass render_pass_;
   vk::UniquePipeline graphics_pipeline_;
   std::vector<vk::UniqueCommandBuffer> command_buffers_;
   std::vector<vk::UniqueFramebuffer> framebuffers_;
+
+  const std::vector<Vertex> vertices_;
 };
 class TriangleApplication {
 public:

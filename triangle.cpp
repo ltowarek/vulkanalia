@@ -18,6 +18,27 @@
 #include <fstream>
 
 namespace vka {
+vk::VertexInputBindingDescription get_binding_description() {
+  vk::VertexInputBindingDescription description;
+  description.binding = 0;
+  description.stride = sizeof(Vertex);
+  description.inputRate = vk::VertexInputRate::eVertex;
+  return description;
+}
+std::vector<vk::VertexInputAttributeDescription> get_attribute_descriptions() {
+  std::vector<vk::VertexInputAttributeDescription> descriptions(2);
+  descriptions[0].binding = 0;
+  descriptions[0].location = 0;
+  descriptions[0].format = vk::Format::eR32G32Sfloat;
+  descriptions[0].offset = offsetof(Vertex, position);
+
+  descriptions[1].binding = 0;
+  descriptions[1].location = 1;
+  descriptions[1].format = vk::Format::eR32G32B32Sfloat;
+  descriptions[1].offset = offsetof(Vertex, color);
+
+  return descriptions;
+}
 vk::ApplicationInfo create_application_info(const std::string name,
                                             const Version version) {
   vk::ApplicationInfo info;
@@ -79,6 +100,14 @@ vk::UniqueCommandPool create_command_pool(const vk::Device &device,
   vk::CommandPoolCreateInfo info;
   info.queueFamilyIndex = queue_index;
   return device.createCommandPoolUnique(info);
+}
+vk::UniqueBuffer create_vertex_buffer(const vk::Device &device,
+                                      const uint32_t size) {
+  vk::BufferCreateInfo info;
+  info.size = size;
+  info.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+  info.sharingMode = vk::SharingMode::eExclusive;
+  return device.createBufferUnique(info);
 }
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
@@ -246,6 +275,16 @@ create_graphics_pipeline(const vk::Device &device,
   info.pStages = stages.data();
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state;
+  vk::VertexInputBindingDescription binding_description =
+      get_binding_description();
+  std::vector<vk::VertexInputAttributeDescription> attribute_descriptions =
+      get_attribute_descriptions();
+  vertex_input_state.vertexBindingDescriptionCount = 1;
+  vertex_input_state.pVertexBindingDescriptions = &binding_description;
+  vertex_input_state.vertexAttributeDescriptionCount =
+      static_cast<uint32_t>(attribute_descriptions.size());
+  vertex_input_state.pVertexAttributeDescriptions =
+      attribute_descriptions.data();
   info.pVertexInputState = &vertex_input_state;
 
   vk::PipelineInputAssemblyStateCreateInfo input_assembly_state;
@@ -392,6 +431,10 @@ void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
   queue.presentKHR(present_info);
   queue.waitIdle();
 }
+VulkanController::VulkanController()
+    : vertices_({{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+                 {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+                 {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}}){};
 VulkanController::~VulkanController() {
   if (device_) {
     (*device_).waitIdle();
@@ -426,6 +469,9 @@ void VulkanController::initialize(vk::UniqueInstance instance,
   device_ = vka::create_device(physical_device_, queue_index_);
 
   command_pool_ = vka::create_command_pool(*device_, queue_index_);
+
+  vertex_buffer_ = vka::create_vertex_buffer(
+      *device_, static_cast<uint32_t>(sizeof(vertices_[0]) * vertices_.size()));
 
   recreate_swapchain(swapchain_extent_);
 }
@@ -505,6 +551,7 @@ void VulkanController::release_swapchain() {
 }
 void VulkanController::release() {
   release_swapchain();
+  vertex_buffer_.release();
   command_pool_.release();
   device_.release();
   surface_.release();
