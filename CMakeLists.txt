@@ -42,11 +42,21 @@ add_subdirectory("${CMAKE_BINARY_DIR}/external/glfw-src"
                  "${CMAKE_BINARY_DIR}/external/glfw-build")
 add_library(GLFW::GLFW ALIAS glfw)
 
+configure_file(cmake/glm.cmake.in ${CMAKE_BINARY_DIR}/download/glm/CMakeLists.txt)
+execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" . 
+                WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/download/glm")
+execute_process(COMMAND "${CMAKE_COMMAND}" --build . 
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/download/glm")
+
+add_subdirectory("${CMAKE_BINARY_DIR}/external/glm-src"
+                 "${CMAKE_BINARY_DIR}/external/glm-build")
+add_library(GLM::GLM ALIAS glm)
+
 find_package(Vulkan REQUIRED)
 
 add_library(triangle triangle.hpp triangle.cpp)
 add_library(vka::triangle ALIAS triangle)
-target_link_libraries(triangle GLFW::GLFW Vulkan::Vulkan)
+target_link_libraries(triangle GLFW::GLFW Vulkan::Vulkan GLM::GLM)
 
 add_executable(vulkanalia main.cpp)
 target_link_libraries(vulkanalia vka::triangle)
