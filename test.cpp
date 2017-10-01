@@ -88,6 +88,13 @@ protected:
     }
     return *vertex_buffer_;
   }
+  static vk::PhysicalDeviceMemoryProperties
+  physical_device_memory_properties() {
+    return physical_device().getMemoryProperties();
+  }
+  static vk::MemoryRequirements vertex_buffer_memory_requirements() {
+    return device().getBufferMemoryRequirements(vertex_buffer());
+  }
   static const vk::SurfaceKHR &surface() {
     if (!surface_) {
       surface_ = vk::UniqueSurfaceKHR(window_manager_.surface(instance()));
@@ -326,6 +333,69 @@ TEST_F(TriangleTest, CreatesVertexBufferWithoutThrowingException) {
   const uint32_t size =
       static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
   EXPECT_NO_THROW(vka::create_vertex_buffer(device(), size));
+}
+
+TEST_F(TriangleTest, ReturnsUINT32MaxValueGivenThereAreNoMemoryTypes) {
+  vk::MemoryType memory_type;
+  memory_type.propertyFlags = vk::MemoryPropertyFlagBits::eHostVisible;
+  vk::PhysicalDeviceMemoryProperties physical_device_memory_properties;
+  physical_device_memory_properties.memoryTypeCount = 0;
+  physical_device_memory_properties.memoryTypes[0] = memory_type;
+  const uint32_t required_memory_type = UINT32_MAX;
+  const vk::MemoryPropertyFlags required_memory_properties =
+      memory_type.propertyFlags;
+  EXPECT_EQ(vka::find_memory_type(physical_device_memory_properties,
+                                  required_memory_type,
+                                  required_memory_properties),
+            UINT32_MAX);
+}
+
+TEST_F(TriangleTest,
+       ReturnsUINT32MaxValueGivenMemoryTypeWithRequiredMemoryTypeDoesNotExist) {
+  vk::MemoryType memory_type;
+  memory_type.propertyFlags = vk::MemoryPropertyFlagBits::eHostVisible;
+  vk::PhysicalDeviceMemoryProperties physical_device_memory_properties;
+  physical_device_memory_properties.memoryTypeCount = 1;
+  physical_device_memory_properties.memoryTypes[0] = memory_type;
+  const uint32_t required_memory_type = 0;
+  const vk::MemoryPropertyFlags required_memory_properties =
+      memory_type.propertyFlags;
+  EXPECT_EQ(vka::find_memory_type(physical_device_memory_properties,
+                                  required_memory_type,
+                                  required_memory_properties),
+            UINT32_MAX);
+}
+
+TEST_F(
+    TriangleTest,
+    ReturnsUINT32MaxValueGivenMemoryTypeWithRequiredMemoryPropertiesDoNotExist) {
+  vk::MemoryType memory_type;
+  memory_type.propertyFlags = vk::MemoryPropertyFlags();
+  vk::PhysicalDeviceMemoryProperties physical_device_memory_properties;
+  physical_device_memory_properties.memoryTypeCount = 1;
+  physical_device_memory_properties.memoryTypes[0] = memory_type;
+  const uint32_t required_memory_type = UINT32_MAX;
+  const vk::MemoryPropertyFlags required_memory_properties =
+      vk::MemoryPropertyFlagBits::eHostVisible;
+  EXPECT_EQ(vka::find_memory_type(physical_device_memory_properties,
+                                  required_memory_type,
+                                  required_memory_properties),
+            UINT32_MAX);
+}
+
+TEST_F(TriangleTest, ReturnsMemoryTypeIndexGivenItExist) {
+  vk::MemoryType memory_type;
+  memory_type.propertyFlags = vk::MemoryPropertyFlagBits::eHostVisible;
+  vk::PhysicalDeviceMemoryProperties physical_device_memory_properties;
+  physical_device_memory_properties.memoryTypeCount = 1;
+  physical_device_memory_properties.memoryTypes[0] = memory_type;
+  const uint32_t required_memory_type = UINT32_MAX;
+  const vk::MemoryPropertyFlags required_memory_properties =
+      memory_type.propertyFlags;
+  EXPECT_EQ(vka::find_memory_type(physical_device_memory_properties,
+                                  required_memory_type,
+                                  required_memory_properties),
+            0);
 }
 
 TEST_F(TriangleTest, CreatesCommandBuffersWithoutThrowingException) {

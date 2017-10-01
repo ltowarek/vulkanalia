@@ -109,6 +109,20 @@ vk::UniqueBuffer create_vertex_buffer(const vk::Device &device,
   info.sharingMode = vk::SharingMode::eExclusive;
   return device.createBufferUnique(info);
 }
+uint32_t find_memory_type(
+    const vk::PhysicalDeviceMemoryProperties physical_device_memory_properties,
+    const uint32_t required_memory_type,
+    const vk::MemoryPropertyFlags required_memory_properties) {
+  for (uint32_t i = 0; i < physical_device_memory_properties.memoryTypeCount;
+       ++i) {
+    if ((required_memory_type & (1 << i)) &&
+        (physical_device_memory_properties.memoryTypes[i].propertyFlags &
+         required_memory_properties) == required_memory_properties) {
+      return i;
+    }
+  }
+  return UINT32_MAX;
+}
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool,
