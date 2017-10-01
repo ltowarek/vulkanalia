@@ -80,6 +80,14 @@ protected:
     }
     return *command_pool_;
   }
+  static const vk::Buffer &vertex_buffer() {
+    if (!vertex_buffer_) {
+      const uint32_t size =
+          static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
+      vertex_buffer_ = vka::create_vertex_buffer(device(), size);
+    }
+    return *vertex_buffer_;
+  }
   static const vk::SurfaceKHR &surface() {
     if (!surface_) {
       surface_ = vk::UniqueSurfaceKHR(window_manager_.surface(instance()));
@@ -204,6 +212,7 @@ protected:
 
     swapchain_.release();
 
+    vertex_buffer_.release();
     command_pool_.release();
     device_.release();
     surface_.release();
@@ -217,6 +226,7 @@ private:
   static uint32_t queue_index_;
   static vk::UniqueDevice device_;
   static vk::UniqueCommandPool command_pool_;
+  static vk::UniqueBuffer vertex_buffer_;
   static vk::UniqueSurfaceKHR surface_;
   static vk::PhysicalDevice physical_device_;
   static std::vector<vk::QueueFamilyProperties> queue_family_properties_;
@@ -235,6 +245,7 @@ vk::UniqueInstance TriangleTest::instance_ = vk::UniqueInstance();
 vk::UniqueDevice TriangleTest::device_ = vk::UniqueDevice();
 uint32_t TriangleTest::queue_index_ = UINT32_MAX;
 vk::UniqueCommandPool TriangleTest::command_pool_ = vk::UniqueCommandPool();
+vk::UniqueBuffer TriangleTest::vertex_buffer_ = vk::UniqueBuffer();
 vk::UniqueSurfaceKHR TriangleTest::surface_ = vk::UniqueSurfaceKHR();
 vk::PhysicalDevice TriangleTest::physical_device_ = vk::PhysicalDevice();
 std::vector<vk::QueueFamilyProperties> TriangleTest::queue_family_properties_ =
