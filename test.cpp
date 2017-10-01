@@ -93,6 +93,7 @@ protected:
       vertex_buffer_memory_ = vka::allocate_buffer_memory(
           device(), vertex_buffer(), physical_device().getMemoryProperties());
     }
+    device().bindBufferMemory(vertex_buffer(), *vertex_buffer_memory_, 0);
     return *vertex_buffer_memory_;
   }
   static const vk::SurfaceKHR &surface() {
@@ -405,6 +406,11 @@ TEST_F(TriangleTest, ReturnsMemoryTypeIndexGivenItExist) {
 TEST_F(TriangleTest, AllocatesMemoryForVertexBufferWithoutThrowingException) {
   EXPECT_NO_THROW(vka::allocate_buffer_memory(
       device(), vertex_buffer(), physical_device().getMemoryProperties()));
+}
+
+TEST_F(TriangleTest, FillsVertexBufferWithoutThrowingException) {
+  EXPECT_NO_THROW(
+      vka::fill_vertex_buffer(device(), vertex_buffer_memory(), vertices()));
 }
 
 TEST_F(TriangleTest, CreatesCommandBuffersWithoutThrowingException) {

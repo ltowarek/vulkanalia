@@ -137,6 +137,16 @@ allocate_buffer_memory(const vk::Device &device, const vk::Buffer buffer,
           vk::MemoryPropertyFlagBits::eHostCoherent);
   return device.allocateMemoryUnique(info);
 }
+void fill_vertex_buffer(const vk::Device &device,
+                        const vk::DeviceMemory &buffer_memory,
+                        const std::vector<vka::Vertex> &vertices) {
+  const uint32_t size =
+      static_cast<uint32_t>(sizeof(vertices[0]) * vertices.size());
+  void *pointer;
+  device.mapMemory(buffer_memory, 0, size, vk::MemoryMapFlags(), &pointer);
+  std::memcpy(pointer, vertices.data(), size);
+  device.unmapMemory(buffer_memory);
+}
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool,
@@ -503,6 +513,10 @@ void VulkanController::initialize(vk::UniqueInstance instance,
 
   vertex_buffer_memory_ = vka::allocate_buffer_memory(
       *device_, *vertex_buffer_, physical_device_.getMemoryProperties());
+
+  (*device_).bindBufferMemory(*vertex_buffer_, *vertex_buffer_memory_, 0);
+
+  vka::fill_vertex_buffer(*device_, *vertex_buffer_memory_, vertices_);
 
   recreate_swapchain(swapchain_extent_);
 }
