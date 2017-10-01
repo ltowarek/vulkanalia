@@ -219,8 +219,8 @@ protected:
 
     swapchain_.release();
 
-    vertex_buffer_memory_.release();
     vertex_buffer_.release();
+    vertex_buffer_memory_.release();
     command_pool_.release();
     device_.release();
     surface_.release();
