@@ -402,8 +402,8 @@ void record_command_buffers(
     const std::vector<vk::CommandBuffer> &command_buffers,
     const vk::RenderPass &render_pass, const vk::Pipeline &graphics_pipeline,
     const std::vector<vk::Framebuffer> &framebuffers,
-    const vk::Extent2D &swapchain_extent) {
-
+    const vk::Extent2D &swapchain_extent, const vk::Buffer &vertex_buffer,
+    const std::vector<Vertex> &vertices) {
   for (size_t i = 0; i < command_buffers.size(); ++i) {
     vk::CommandBufferBeginInfo command_buffer_begin_info;
     command_buffer_begin_info.flags =
@@ -424,7 +424,8 @@ void record_command_buffers(
                                        vk::SubpassContents::eInline);
     command_buffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics,
                                     graphics_pipeline);
-    command_buffers[i].draw(3, 1, 0, 0);
+    command_buffers[i].bindVertexBuffers(0, {vertex_buffer}, {0});
+    command_buffers[i].draw(static_cast<uint32_t>(vertices.size()), 1, 0, 0);
     command_buffers[i].endRenderPass();
 
     command_buffers[i].end();
@@ -567,7 +568,7 @@ void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
 
   vka::record_command_buffers(*device_, command_buffer_pointers, *render_pass_,
                               *graphics_pipeline_, framebuffer_pointers,
-                              swapchain_extent_);
+                              swapchain_extent_, *vertex_buffer_, vertices_);
 }
 void VulkanController::draw() {
   std::vector<vk::CommandBuffer> command_buffer_pointers;

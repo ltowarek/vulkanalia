@@ -103,7 +103,8 @@ void record_command_buffers(
     const std::vector<vk::CommandBuffer> &command_buffers,
     const vk::RenderPass &render_pass, const vk::Pipeline &graphics_pipeline,
     const std::vector<vk::Framebuffer> &framebuffers,
-    const vk::Extent2D &swapchain_extent);
+    const vk::Extent2D &swapchain_extent, const vk::Buffer &vertex_buffer,
+    const std::vector<Vertex> &vertices);
 void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
                 const std::vector<vk::CommandBuffer> &command_buffers,
                 const uint32_t queue_index);

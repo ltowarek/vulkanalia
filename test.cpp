@@ -627,7 +627,7 @@ TEST_F(TriangleTest, CreatesFramebuffersWithoutThrowingException) {
 TEST_F(TriangleTest, RecordsCommandBuffersWithoutThrowingException) {
   EXPECT_NO_THROW(vka::record_command_buffers(
       device(), command_buffers(), render_pass(), graphics_pipeline(),
-      framebuffers(), swapchain_extent()));
+      framebuffers(), swapchain_extent(), vertex_buffer(), vertices()));
 }
 
 TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
@@ -640,7 +640,7 @@ TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
   }
   vka::record_command_buffers(device(), command_buffer_pointers, render_pass(),
                               graphics_pipeline(), framebuffers(),
-                              swapchain_extent());
+                              swapchain_extent(), vertex_buffer(), vertices());
   EXPECT_NO_THROW(vka::draw_frame(device(), swapchain(),
                                   command_buffer_pointers, queue_index()));
 }
