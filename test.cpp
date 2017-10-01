@@ -88,12 +88,12 @@ protected:
     }
     return *vertex_buffer_;
   }
-  static vk::PhysicalDeviceMemoryProperties
-  physical_device_memory_properties() {
-    return physical_device().getMemoryProperties();
-  }
-  static vk::MemoryRequirements vertex_buffer_memory_requirements() {
-    return device().getBufferMemoryRequirements(vertex_buffer());
+  static const vk::DeviceMemory &vertex_buffer_memory() {
+    if (!vertex_buffer_memory_) {
+      vertex_buffer_memory_ = vka::allocate_buffer_memory(
+          device(), vertex_buffer(), physical_device().getMemoryProperties());
+    }
+    return *vertex_buffer_memory_;
   }
   static const vk::SurfaceKHR &surface() {
     if (!surface_) {
@@ -219,6 +219,7 @@ protected:
 
     swapchain_.release();
 
+    vertex_buffer_memory_.release();
     vertex_buffer_.release();
     command_pool_.release();
     device_.release();
@@ -234,6 +235,7 @@ private:
   static vk::UniqueDevice device_;
   static vk::UniqueCommandPool command_pool_;
   static vk::UniqueBuffer vertex_buffer_;
+  static vk::UniqueDeviceMemory vertex_buffer_memory_;
   static vk::UniqueSurfaceKHR surface_;
   static vk::PhysicalDevice physical_device_;
   static std::vector<vk::QueueFamilyProperties> queue_family_properties_;
@@ -253,6 +255,8 @@ vk::UniqueDevice TriangleTest::device_ = vk::UniqueDevice();
 uint32_t TriangleTest::queue_index_ = UINT32_MAX;
 vk::UniqueCommandPool TriangleTest::command_pool_ = vk::UniqueCommandPool();
 vk::UniqueBuffer TriangleTest::vertex_buffer_ = vk::UniqueBuffer();
+vk::UniqueDeviceMemory TriangleTest::vertex_buffer_memory_ =
+    vk::UniqueDeviceMemory();
 vk::UniqueSurfaceKHR TriangleTest::surface_ = vk::UniqueSurfaceKHR();
 vk::PhysicalDevice TriangleTest::physical_device_ = vk::PhysicalDevice();
 std::vector<vk::QueueFamilyProperties> TriangleTest::queue_family_properties_ =
@@ -396,6 +400,11 @@ TEST_F(TriangleTest, ReturnsMemoryTypeIndexGivenItExist) {
                                   required_memory_type,
                                   required_memory_properties),
             0);
+}
+
+TEST_F(TriangleTest, AllocatesMemoryForVertexBufferWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::allocate_buffer_memory(
+      device(), vertex_buffer(), physical_device().getMemoryProperties()));
 }
 
 TEST_F(TriangleTest, CreatesCommandBuffersWithoutThrowingException) {

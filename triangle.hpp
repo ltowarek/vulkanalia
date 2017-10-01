@@ -53,6 +53,10 @@ uint32_t find_memory_type(
     const vk::PhysicalDeviceMemoryProperties physical_device_memory_properties,
     const uint32_t required_memory_type,
     const vk::MemoryPropertyFlags required_memory_properties);
+vk::UniqueDeviceMemory
+allocate_buffer_memory(const vk::Device &device, const vk::Buffer buffer,
+                       const vk::PhysicalDeviceMemoryProperties
+                           &physical_device_memory_properties);
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool,
@@ -122,6 +126,7 @@ private:
   vk::UniqueDevice device_;
   vk::UniqueCommandPool command_pool_;
   vk::UniqueBuffer vertex_buffer_;
+  vk::UniqueDeviceMemory vertex_buffer_memory_;
   vk::UniqueSwapchainKHR swapchain_;
   std::vector<vk::UniqueImageView> swapchain_image_views_;
   vk::UniqueRenderPass render_pass_;

@@ -123,6 +123,20 @@ uint32_t find_memory_type(
   }
   return UINT32_MAX;
 }
+vk::UniqueDeviceMemory
+allocate_buffer_memory(const vk::Device &device, const vk::Buffer buffer,
+                       const vk::PhysicalDeviceMemoryProperties
+                           &physical_device_memory_properties) {
+  vk::MemoryRequirements memory_requirements =
+      device.getBufferMemoryRequirements(buffer);
+  vk::MemoryAllocateInfo info;
+  info.allocationSize = memory_requirements.size;
+  info.memoryTypeIndex = find_memory_type(
+      physical_device_memory_properties, memory_requirements.memoryTypeBits,
+      vk::MemoryPropertyFlagBits::eHostVisible |
+          vk::MemoryPropertyFlagBits::eHostCoherent);
+  return device.allocateMemoryUnique(info);
+}
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool,
@@ -487,6 +501,9 @@ void VulkanController::initialize(vk::UniqueInstance instance,
   vertex_buffer_ = vka::create_vertex_buffer(
       *device_, static_cast<uint32_t>(sizeof(vertices_[0]) * vertices_.size()));
 
+  vertex_buffer_memory_ = vka::allocate_buffer_memory(
+      *device_, *vertex_buffer_, physical_device_.getMemoryProperties());
+
   recreate_swapchain(swapchain_extent_);
 }
 void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
@@ -565,6 +582,7 @@ void VulkanController::release_swapchain() {
 }
 void VulkanController::release() {
   release_swapchain();
+  vertex_buffer_memory_.release();
   vertex_buffer_.release();
   command_pool_.release();
   device_.release();
