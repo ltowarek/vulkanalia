@@ -60,6 +60,10 @@ vk::UniqueDeviceMemory allocate_buffer_memory(
 void fill_vertex_buffer(const vk::Device &device,
                         const vk::DeviceMemory &buffer_memory,
                         const std::vector<vka::Vertex> &vertices);
+void copy_buffer(const vk::Device &device, const vk::Buffer &source_buffer,
+                 const vk::Buffer &destination_buffer, const uint32_t size,
+                 const vk::CommandPool &command_pool,
+                 const uint32_t queue_index);
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool,

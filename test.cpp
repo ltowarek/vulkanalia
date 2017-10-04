@@ -84,8 +84,10 @@ protected:
     if (!vertex_buffer_) {
       const uint32_t size =
           static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
-      vertex_buffer_ = vka::create_buffer(
-          device(), size, vk::BufferUsageFlagBits::eVertexBuffer);
+      vertex_buffer_ =
+          vka::create_buffer(device(), size,
+                             vk::BufferUsageFlagBits::eVertexBuffer |
+                                 vk::BufferUsageFlagBits::eTransferDst);
     }
     return *vertex_buffer_;
   }
@@ -93,11 +95,29 @@ protected:
     if (!vertex_buffer_memory_) {
       vertex_buffer_memory_ = vka::allocate_buffer_memory(
           device(), vertex_buffer(), physical_device().getMemoryProperties(),
+          vk::MemoryPropertyFlagBits::eDeviceLocal);
+      device().bindBufferMemory(vertex_buffer(), *vertex_buffer_memory_, 0);
+    }
+    return *vertex_buffer_memory_;
+  }
+  static const vk::Buffer &staging_buffer() {
+    if (!staging_buffer_) {
+      const uint32_t size =
+          static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
+      staging_buffer_ = vka::create_buffer(
+          device(), size, vk::BufferUsageFlagBits::eTransferSrc);
+    }
+    return *staging_buffer_;
+  }
+  static const vk::DeviceMemory &staging_buffer_memory() {
+    if (!staging_buffer_memory_) {
+      staging_buffer_memory_ = vka::allocate_buffer_memory(
+          device(), staging_buffer(), physical_device().getMemoryProperties(),
           vk::MemoryPropertyFlagBits::eHostVisible |
               vk::MemoryPropertyFlagBits::eHostCoherent);
+      device().bindBufferMemory(staging_buffer(), *staging_buffer_memory_, 0);
     }
-    device().bindBufferMemory(vertex_buffer(), *vertex_buffer_memory_, 0);
-    return *vertex_buffer_memory_;
+    return *staging_buffer_memory_;
   }
   static const vk::SurfaceKHR &surface() {
     if (!surface_) {
@@ -225,6 +245,8 @@ protected:
 
     vertex_buffer_.release();
     vertex_buffer_memory_.release();
+    staging_buffer_.release();
+    staging_buffer_memory_.release();
     command_pool_.release();
     device_.release();
     surface_.release();
@@ -239,7 +261,9 @@ private:
   static vk::UniqueDevice device_;
   static vk::UniqueCommandPool command_pool_;
   static vk::UniqueBuffer vertex_buffer_;
+  static vk::UniqueBuffer staging_buffer_;
   static vk::UniqueDeviceMemory vertex_buffer_memory_;
+  static vk::UniqueDeviceMemory staging_buffer_memory_;
   static vk::UniqueSurfaceKHR surface_;
   static vk::PhysicalDevice physical_device_;
   static std::vector<vk::QueueFamilyProperties> queue_family_properties_;
@@ -259,7 +283,10 @@ vk::UniqueDevice TriangleTest::device_ = vk::UniqueDevice();
 uint32_t TriangleTest::queue_index_ = UINT32_MAX;
 vk::UniqueCommandPool TriangleTest::command_pool_ = vk::UniqueCommandPool();
 vk::UniqueBuffer TriangleTest::vertex_buffer_ = vk::UniqueBuffer();
+vk::UniqueBuffer TriangleTest::staging_buffer_ = vk::UniqueBuffer();
 vk::UniqueDeviceMemory TriangleTest::vertex_buffer_memory_ =
+    vk::UniqueDeviceMemory();
+vk::UniqueDeviceMemory TriangleTest::staging_buffer_memory_ =
     vk::UniqueDeviceMemory();
 vk::UniqueSurfaceKHR TriangleTest::surface_ = vk::UniqueSurfaceKHR();
 vk::PhysicalDevice TriangleTest::physical_device_ = vk::PhysicalDevice();
@@ -340,8 +367,17 @@ TEST_F(TriangleTest, CreatesCommandPoolWithoutThrowingException) {
 TEST_F(TriangleTest, CreatesVertexBufferWithoutThrowingException) {
   const uint32_t size =
       static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
+  EXPECT_NO_THROW(
+      vka::create_buffer(device(), size,
+                         vk::BufferUsageFlagBits::eVertexBuffer |
+                             vk::BufferUsageFlagBits::eTransferDst));
+}
+
+TEST_F(TriangleTest, CreatesStagingBufferWithoutThrowingException) {
+  const uint32_t size =
+      static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
   EXPECT_NO_THROW(vka::create_buffer(device(), size,
-                                     vk::BufferUsageFlagBits::eVertexBuffer));
+                                     vk::BufferUsageFlagBits::eTransferSrc));
 }
 
 TEST_F(TriangleTest, ReturnsUINT32MaxValueGivenThereAreNoMemoryTypes) {
@@ -410,13 +446,28 @@ TEST_F(TriangleTest, ReturnsMemoryTypeIndexGivenItExist) {
 TEST_F(TriangleTest, AllocatesMemoryForVertexBufferWithoutThrowingException) {
   EXPECT_NO_THROW(vka::allocate_buffer_memory(
       device(), vertex_buffer(), physical_device().getMemoryProperties(),
+      vk::MemoryPropertyFlagBits::eDeviceLocal));
+}
+
+TEST_F(TriangleTest, AllocatesMemoryForStagingBufferWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::allocate_buffer_memory(
+      device(), staging_buffer(), physical_device().getMemoryProperties(),
       vk::MemoryPropertyFlagBits::eHostVisible |
           vk::MemoryPropertyFlagBits::eHostCoherent));
 }
 
-TEST_F(TriangleTest, FillsVertexBufferWithoutThrowingException) {
+TEST_F(TriangleTest, FillsStagingBufferWithoutThrowingException) {
   EXPECT_NO_THROW(
-      vka::fill_vertex_buffer(device(), vertex_buffer_memory(), vertices()));
+      vka::fill_vertex_buffer(device(), staging_buffer_memory(), vertices()));
+}
+
+TEST_F(TriangleTest, CopiesBufferWithoutThrowingException) {
+  vertex_buffer_memory();
+  const uint32_t size =
+      static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
+  vka::fill_vertex_buffer(device(), staging_buffer_memory(), vertices());
+  EXPECT_NO_THROW(vka::copy_buffer(device(), staging_buffer(), vertex_buffer(),
+                                   size, command_pool(), queue_index()));
 }
 
 TEST_F(TriangleTest, CreatesCommandBuffersWithoutThrowingException) {
@@ -637,6 +688,12 @@ TEST_F(TriangleTest, RecordsCommandBuffersWithoutThrowingException) {
 }
 
 TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
+  vertex_buffer_memory();
+  const uint32_t size =
+      static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
+  vka::fill_vertex_buffer(device(), staging_buffer_memory(), vertices());
+  vka::copy_buffer(device(), staging_buffer(), vertex_buffer(), size,
+                   command_pool(), queue_index());
   std::vector<vk::UniqueCommandBuffer> command_buffers =
       vka::create_command_buffers(device(), command_pool(),
                                   static_cast<uint32_t>(framebuffers().size()));

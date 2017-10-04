@@ -146,6 +146,31 @@ void fill_vertex_buffer(const vk::Device &device,
   std::memcpy(pointer, vertices.data(), size);
   device.unmapMemory(buffer_memory);
 }
+void copy_buffer(const vk::Device &device, const vk::Buffer &source_buffer,
+                 const vk::Buffer &destination_buffer, const uint32_t size,
+                 const vk::CommandPool &command_pool,
+                 const uint32_t queue_index) {
+  const std::vector<vk::UniqueCommandBuffer> command_buffers =
+      create_command_buffers(device, command_pool, 1);
+  const vk::CommandBuffer command_buffer = *command_buffers[0];
+
+  vk::CommandBufferBeginInfo command_buffer_begin_info;
+  command_buffer_begin_info.flags =
+      vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+  command_buffer.begin(command_buffer_begin_info);
+  const vk::BufferCopy region(0, 0, size);
+  command_buffer.copyBuffer(source_buffer, destination_buffer, 1, &region);
+  command_buffer.end();
+
+  vk::SubmitInfo submit_info;
+  submit_info.commandBufferCount = 1;
+  submit_info.pCommandBuffers = &command_buffer;
+
+  vk::Queue queue = device.getQueue(queue_index, 0);
+  queue.submit(submit_info, vk::Fence());
+  queue.waitIdle();
+}
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool,
@@ -508,18 +533,34 @@ void VulkanController::initialize(vk::UniqueInstance instance,
 
   command_pool_ = vka::create_command_pool(*device_, queue_index_);
 
-  vertex_buffer_ = vka::create_buffer(
-      *device_, static_cast<uint32_t>(sizeof(vertices_[0]) * vertices_.size()),
-      vk::BufferUsageFlagBits::eVertexBuffer);
+  const uint32_t vertices_size =
+      static_cast<uint32_t>(sizeof(vertices_[0]) * vertices_.size());
+
+  vertex_buffer_ =
+      vka::create_buffer(*device_, vertices_size,
+                         vk::BufferUsageFlagBits::eVertexBuffer |
+                             vk::BufferUsageFlagBits::eTransferDst);
 
   vertex_buffer_memory_ = vka::allocate_buffer_memory(
       *device_, *vertex_buffer_, physical_device_.getMemoryProperties(),
-      vk::MemoryPropertyFlagBits::eHostVisible |
-          vk::MemoryPropertyFlagBits::eHostCoherent);
+      vk::MemoryPropertyFlagBits::eDeviceLocal);
 
   (*device_).bindBufferMemory(*vertex_buffer_, *vertex_buffer_memory_, 0);
 
-  vka::fill_vertex_buffer(*device_, *vertex_buffer_memory_, vertices_);
+  vk::UniqueBuffer staging_buffer = vka::create_buffer(
+      *device_, vertices_size, vk::BufferUsageFlagBits::eTransferSrc);
+
+  vk::UniqueDeviceMemory staging_buffer_memory = vka::allocate_buffer_memory(
+      *device_, *staging_buffer, physical_device_.getMemoryProperties(),
+      vk::MemoryPropertyFlagBits::eHostVisible |
+          vk::MemoryPropertyFlagBits::eHostCoherent);
+
+  (*device_).bindBufferMemory(*staging_buffer, *staging_buffer_memory, 0);
+
+  vka::fill_vertex_buffer(*device_, *staging_buffer_memory, vertices_);
+
+  vka::copy_buffer(*device_, *staging_buffer, *vertex_buffer_, vertices_size,
+                   *command_pool_, queue_index_);
 
   recreate_swapchain(swapchain_extent_);
 }
