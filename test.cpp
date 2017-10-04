@@ -26,7 +26,7 @@ public:
     window_ = glfwCreateWindow(500, 500, "Test", nullptr, nullptr);
   }
   ~WindowManager() { glfwDestroyWindow(window_); }
-  std::vector<const char *> extension_names() {
+  static std::vector<const char *> extension_names() {
     std::vector<const char *> extension_names;
     uint32_t glfw_extension_count = 0;
     const char **glfw_extensions =
@@ -48,23 +48,24 @@ private:
 
 class TriangleTest : public ::testing::Test {
 protected:
-  static void TearDownTestCase() { release(); }
+  static void TearDownTestCase() { instance_.release(); }
+  void TearDown() { release(); }
   static const vk::Instance &instance() {
     if (!instance_) {
       vk::ApplicationInfo application_info =
           vka::create_application_info("Test", {1, 2, 3});
       instance_ = vka::create_instance(application_info,
-                                       window_manager_.extension_names());
+                                       WindowManager::extension_names());
     }
     return *instance_;
   }
-  static const vk::Device &device() {
+  const vk::Device &device() {
     if (!device_) {
       device_ = vka::create_device(physical_device(), queue_index());
     }
     return *device_;
   }
-  static const uint32_t queue_index() {
+  const uint32_t queue_index() {
     if (queue_index_ == UINT32_MAX) {
       std::vector<vk::Bool32> presentation_support =
           vka::get_presentation_support(physical_device(), surface(),
@@ -74,13 +75,13 @@ protected:
     }
     return queue_index_;
   }
-  static const vk::CommandPool &command_pool() {
+  const vk::CommandPool &command_pool() {
     if (!command_pool_) {
       command_pool_ = vka::create_command_pool(device(), queue_index());
     }
     return *command_pool_;
   }
-  static const vk::Buffer &vertex_buffer() {
+  const vk::Buffer &vertex_buffer() {
     if (!vertex_buffer_) {
       const uint32_t size =
           static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
@@ -91,7 +92,7 @@ protected:
     }
     return *vertex_buffer_;
   }
-  static const vk::DeviceMemory &vertex_buffer_memory() {
+  const vk::DeviceMemory &vertex_buffer_memory() {
     if (!vertex_buffer_memory_) {
       vertex_buffer_memory_ = vka::allocate_buffer_memory(
           device(), vertex_buffer(), physical_device().getMemoryProperties(),
@@ -100,7 +101,7 @@ protected:
     }
     return *vertex_buffer_memory_;
   }
-  static const vk::Buffer &staging_buffer() {
+  const vk::Buffer &staging_buffer() {
     if (!staging_buffer_) {
       const uint32_t size =
           static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
@@ -109,7 +110,7 @@ protected:
     }
     return *staging_buffer_;
   }
-  static const vk::DeviceMemory &staging_buffer_memory() {
+  const vk::DeviceMemory &staging_buffer_memory() {
     if (!staging_buffer_memory_) {
       staging_buffer_memory_ = vka::allocate_buffer_memory(
           device(), staging_buffer(), physical_device().getMemoryProperties(),
@@ -119,7 +120,7 @@ protected:
     }
     return *staging_buffer_memory_;
   }
-  static const vk::SurfaceKHR &surface() {
+  const vk::SurfaceKHR &surface() {
     if (!surface_) {
       surface_ = vk::UniqueSurfaceKHR(window_manager_.surface(instance()));
       std::vector<vk::Bool32> presentation_support =
@@ -128,7 +129,7 @@ protected:
     }
     return *surface_;
   }
-  static const vk::PhysicalDevice &physical_device() {
+  const vk::PhysicalDevice &physical_device() {
     if (!physical_device_) {
       const std::vector<vk::PhysicalDevice> devices =
           instance().enumeratePhysicalDevices();
@@ -136,20 +137,19 @@ protected:
     }
     return physical_device_;
   }
-  static const std::vector<vk::QueueFamilyProperties> &
-  queue_family_properties() {
+  const std::vector<vk::QueueFamilyProperties> &queue_family_properties() {
     if (queue_family_properties_.empty()) {
       queue_family_properties_ = physical_device().getQueueFamilyProperties();
     }
     return queue_family_properties_;
   }
-  static const vk::SurfaceFormatKHR surface_format() {
+  const vk::SurfaceFormatKHR surface_format() {
     const vk::SurfaceKHR s = surface();
     const std::vector<vk::SurfaceFormatKHR> formats =
         physical_device().getSurfaceFormatsKHR(s);
     return vka::select_surface_format(formats);
   }
-  static const vk::Extent2D swapchain_extent() {
+  const vk::Extent2D swapchain_extent() {
     const vk::SurfaceKHR s = surface();
     const vk::SurfaceCapabilitiesKHR capabilities =
         physical_device().getSurfaceCapabilitiesKHR(s);
@@ -157,7 +157,7 @@ protected:
     uint32_t height = 500;
     return vka::select_swapchain_extent(capabilities, width, height);
   }
-  static const vk::SwapchainKHR &swapchain() {
+  const vk::SwapchainKHR &swapchain() {
     if (!swapchain_) {
       const vk::SurfaceKHR s = surface();
       const vk::SurfaceCapabilitiesKHR capabilities =
@@ -171,13 +171,13 @@ protected:
     }
     return *swapchain_;
   }
-  static std::vector<vk::Image> swapchain_images() {
+  std::vector<vk::Image> swapchain_images() {
     if (swapchain_images_.empty()) {
       swapchain_images_ = device().getSwapchainImagesKHR(swapchain());
     }
     return swapchain_images_;
   }
-  static std::vector<vk::ImageView> swapchain_image_views() {
+  std::vector<vk::ImageView> swapchain_image_views() {
     if (swapchain_image_views_.empty()) {
       swapchain_image_views_ = vka::create_swapchain_image_views(
           device(), swapchain_images(), surface_format());
@@ -188,20 +188,20 @@ protected:
     }
     return image_views;
   }
-  static const vk::RenderPass &render_pass() {
+  const vk::RenderPass &render_pass() {
     if (!render_pass_) {
       render_pass_ = vka::create_render_pass(device(), surface_format().format);
     }
     return *render_pass_;
   }
-  static const vk::Pipeline &graphics_pipeline() {
+  const vk::Pipeline &graphics_pipeline() {
     if (!graphics_pipeline_) {
       graphics_pipeline_ = vka::create_graphics_pipeline(
           device(), render_pass(), swapchain_extent());
     }
     return *graphics_pipeline_;
   }
-  static const std::vector<vk::Framebuffer> framebuffers() {
+  const std::vector<vk::Framebuffer> framebuffers() {
     if (framebuffers_.empty()) {
       framebuffers_ = vka::create_framebuffers(
           device(), render_pass(), swapchain_extent(), swapchain_image_views());
@@ -212,7 +212,7 @@ protected:
     }
     return framebuffers;
   }
-  static const std::vector<vk::CommandBuffer> command_buffers() {
+  const std::vector<vk::CommandBuffer> command_buffers() {
     if (command_buffers_.empty()) {
       command_buffers_ = vka::create_command_buffers(
           device(), command_pool(),
@@ -224,8 +224,8 @@ protected:
     }
     return command_buffers;
   }
-  static const std::vector<vka::Vertex> vertices() { return vertices_; }
-  static void release() {
+  const std::vector<vka::Vertex> vertices() { return vertices_; }
+  void release() {
     for (auto &framebuffer : framebuffers_) {
       framebuffer.release();
     }
@@ -250,64 +250,41 @@ protected:
     command_pool_.release();
     device_.release();
     surface_.release();
-    instance_.release();
-    surface_.release();
-    instance_.release();
   }
 
 private:
   static vk::UniqueInstance instance_;
-  static uint32_t queue_index_;
-  static vk::UniqueDevice device_;
-  static vk::UniqueCommandPool command_pool_;
-  static vk::UniqueBuffer vertex_buffer_;
-  static vk::UniqueBuffer staging_buffer_;
-  static vk::UniqueDeviceMemory vertex_buffer_memory_;
-  static vk::UniqueDeviceMemory staging_buffer_memory_;
-  static vk::UniqueSurfaceKHR surface_;
-  static vk::PhysicalDevice physical_device_;
-  static std::vector<vk::QueueFamilyProperties> queue_family_properties_;
-  static vk::UniqueSwapchainKHR swapchain_;
-  static std::vector<vk::Image> swapchain_images_;
-  static std::vector<vk::UniqueImageView> swapchain_image_views_;
-  static vk::UniqueRenderPass render_pass_;
-  static vk::UniquePipeline graphics_pipeline_;
-  static std::vector<vk::UniqueFramebuffer> framebuffers_;
-  static std::vector<vk::UniqueCommandBuffer> command_buffers_;
-  static WindowManager window_manager_;
-  static const std::vector<vka::Vertex> vertices_;
+
+  uint32_t queue_index_ = UINT32_MAX;
+  const std::vector<vka::Vertex> vertices_ = {
+      {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+      {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+      {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+  WindowManager window_manager_ = WindowManager();
+  vk::PhysicalDevice physical_device_ = vk::PhysicalDevice();
+  std::vector<vk::QueueFamilyProperties> queue_family_properties_ =
+      std::vector<vk::QueueFamilyProperties>();
+  std::vector<vk::Image> swapchain_images_ = std::vector<vk::Image>();
+
+  vk::UniqueSurfaceKHR surface_ = vk::UniqueSurfaceKHR();
+  vk::UniqueDevice device_ = vk::UniqueDevice();
+  vk::UniqueCommandPool command_pool_ = vk::UniqueCommandPool();
+  vk::UniqueDeviceMemory staging_buffer_memory_ = vk::UniqueDeviceMemory();
+  vk::UniqueBuffer staging_buffer_ = vk::UniqueBuffer();
+  vk::UniqueDeviceMemory vertex_buffer_memory_ = vk::UniqueDeviceMemory();
+  vk::UniqueBuffer vertex_buffer_ = vk::UniqueBuffer();
+  vk::UniqueSwapchainKHR swapchain_ = vk::UniqueSwapchainKHR();
+  std::vector<vk::UniqueImageView> swapchain_image_views_ =
+      std::vector<vk::UniqueImageView>();
+  vk::UniqueRenderPass render_pass_ = vk::UniqueRenderPass();
+  vk::UniquePipeline graphics_pipeline_ = vk::UniquePipeline();
+  std::vector<vk::UniqueCommandBuffer> command_buffers_ =
+      std::vector<vk::UniqueCommandBuffer>();
+  std::vector<vk::UniqueFramebuffer> framebuffers_ =
+      std::vector<vk::UniqueFramebuffer>();
 };
 
 vk::UniqueInstance TriangleTest::instance_ = vk::UniqueInstance();
-vk::UniqueDevice TriangleTest::device_ = vk::UniqueDevice();
-uint32_t TriangleTest::queue_index_ = UINT32_MAX;
-vk::UniqueCommandPool TriangleTest::command_pool_ = vk::UniqueCommandPool();
-vk::UniqueBuffer TriangleTest::vertex_buffer_ = vk::UniqueBuffer();
-vk::UniqueBuffer TriangleTest::staging_buffer_ = vk::UniqueBuffer();
-vk::UniqueDeviceMemory TriangleTest::vertex_buffer_memory_ =
-    vk::UniqueDeviceMemory();
-vk::UniqueDeviceMemory TriangleTest::staging_buffer_memory_ =
-    vk::UniqueDeviceMemory();
-vk::UniqueSurfaceKHR TriangleTest::surface_ = vk::UniqueSurfaceKHR();
-vk::PhysicalDevice TriangleTest::physical_device_ = vk::PhysicalDevice();
-std::vector<vk::QueueFamilyProperties> TriangleTest::queue_family_properties_ =
-    std::vector<vk::QueueFamilyProperties>();
-vk::UniqueSwapchainKHR TriangleTest::swapchain_ = vk::UniqueSwapchainKHR();
-std::vector<vk::Image> TriangleTest::swapchain_images_ =
-    std::vector<vk::Image>();
-std::vector<vk::UniqueImageView> TriangleTest::swapchain_image_views_ =
-    std::vector<vk::UniqueImageView>();
-vk::UniqueRenderPass TriangleTest::render_pass_ = vk::UniqueRenderPass();
-vk::UniquePipeline TriangleTest::graphics_pipeline_ = vk::UniquePipeline();
-std::vector<vk::UniqueFramebuffer> TriangleTest::framebuffers_ =
-    std::vector<vk::UniqueFramebuffer>();
-std::vector<vk::UniqueCommandBuffer> TriangleTest::command_buffers_ =
-    std::vector<vk::UniqueCommandBuffer>();
-WindowManager TriangleTest::window_manager_ = WindowManager();
-const std::vector<vka::Vertex> TriangleTest::vertices_ = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
 TEST_F(TriangleTest, CreatesInstanceWithoutThrowingException) {
   vk::ApplicationInfo application_info =
@@ -682,6 +659,7 @@ TEST_F(TriangleTest, CreatesFramebuffersWithoutThrowingException) {
 }
 
 TEST_F(TriangleTest, RecordsCommandBuffersWithoutThrowingException) {
+  vertex_buffer_memory();
   EXPECT_NO_THROW(vka::record_command_buffers(
       device(), command_buffers(), render_pass(), graphics_pipeline(),
       framebuffers(), swapchain_extent(), vertex_buffer(), vertices()));
