@@ -84,7 +84,8 @@ protected:
     if (!vertex_buffer_) {
       const uint32_t size =
           static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
-      vertex_buffer_ = vka::create_vertex_buffer(device(), size);
+      vertex_buffer_ = vka::create_buffer(
+          device(), size, vk::BufferUsageFlagBits::eVertexBuffer);
     }
     return *vertex_buffer_;
   }
@@ -337,7 +338,8 @@ TEST_F(TriangleTest, CreatesCommandPoolWithoutThrowingException) {
 TEST_F(TriangleTest, CreatesVertexBufferWithoutThrowingException) {
   const uint32_t size =
       static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
-  EXPECT_NO_THROW(vka::create_vertex_buffer(device(), size));
+  EXPECT_NO_THROW(vka::create_buffer(device(), size,
+                                     vk::BufferUsageFlagBits::eVertexBuffer));
 }
 
 TEST_F(TriangleTest, ReturnsUINT32MaxValueGivenThereAreNoMemoryTypes) {

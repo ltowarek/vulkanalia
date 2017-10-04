@@ -47,8 +47,8 @@ vk::UniqueDevice create_device(const vk::PhysicalDevice &physical_device,
                                const uint32_t queue_index);
 vk::UniqueCommandPool create_command_pool(const vk::Device &device,
                                           const uint32_t queue_index);
-vk::UniqueBuffer create_vertex_buffer(const vk::Device &device,
-                                      const uint32_t size);
+vk::UniqueBuffer create_buffer(const vk::Device &device, const uint32_t size,
+                               const vk::BufferUsageFlags usage);
 uint32_t find_memory_type(
     const vk::PhysicalDeviceMemoryProperties physical_device_memory_properties,
     const uint32_t required_memory_type,

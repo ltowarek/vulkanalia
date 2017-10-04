@@ -101,11 +101,11 @@ vk::UniqueCommandPool create_command_pool(const vk::Device &device,
   info.queueFamilyIndex = queue_index;
   return device.createCommandPoolUnique(info);
 }
-vk::UniqueBuffer create_vertex_buffer(const vk::Device &device,
-                                      const uint32_t size) {
+vk::UniqueBuffer create_buffer(const vk::Device &device, const uint32_t size,
+                               const vk::BufferUsageFlags usage) {
   vk::BufferCreateInfo info;
   info.size = size;
-  info.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+  info.usage = usage;
   info.sharingMode = vk::SharingMode::eExclusive;
   return device.createBufferUnique(info);
 }
@@ -509,8 +509,9 @@ void VulkanController::initialize(vk::UniqueInstance instance,
 
   command_pool_ = vka::create_command_pool(*device_, queue_index_);
 
-  vertex_buffer_ = vka::create_vertex_buffer(
-      *device_, static_cast<uint32_t>(sizeof(vertices_[0]) * vertices_.size()));
+  vertex_buffer_ = vka::create_buffer(
+      *device_, static_cast<uint32_t>(sizeof(vertices_[0]) * vertices_.size()),
+      vk::BufferUsageFlagBits::eVertexBuffer);
 
   vertex_buffer_memory_ = vka::allocate_buffer_memory(
       *device_, *vertex_buffer_, physical_device_.getMemoryProperties());
