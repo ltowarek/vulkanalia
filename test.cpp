@@ -92,7 +92,9 @@ protected:
   static const vk::DeviceMemory &vertex_buffer_memory() {
     if (!vertex_buffer_memory_) {
       vertex_buffer_memory_ = vka::allocate_buffer_memory(
-          device(), vertex_buffer(), physical_device().getMemoryProperties());
+          device(), vertex_buffer(), physical_device().getMemoryProperties(),
+          vk::MemoryPropertyFlagBits::eHostVisible |
+              vk::MemoryPropertyFlagBits::eHostCoherent);
     }
     device().bindBufferMemory(vertex_buffer(), *vertex_buffer_memory_, 0);
     return *vertex_buffer_memory_;
@@ -407,7 +409,9 @@ TEST_F(TriangleTest, ReturnsMemoryTypeIndexGivenItExist) {
 
 TEST_F(TriangleTest, AllocatesMemoryForVertexBufferWithoutThrowingException) {
   EXPECT_NO_THROW(vka::allocate_buffer_memory(
-      device(), vertex_buffer(), physical_device().getMemoryProperties()));
+      device(), vertex_buffer(), physical_device().getMemoryProperties(),
+      vk::MemoryPropertyFlagBits::eHostVisible |
+          vk::MemoryPropertyFlagBits::eHostCoherent));
 }
 
 TEST_F(TriangleTest, FillsVertexBufferWithoutThrowingException) {

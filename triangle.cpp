@@ -123,18 +123,17 @@ uint32_t find_memory_type(
   }
   return UINT32_MAX;
 }
-vk::UniqueDeviceMemory
-allocate_buffer_memory(const vk::Device &device, const vk::Buffer buffer,
-                       const vk::PhysicalDeviceMemoryProperties
-                           &physical_device_memory_properties) {
+vk::UniqueDeviceMemory allocate_buffer_memory(
+    const vk::Device &device, const vk::Buffer &buffer,
+    const vk::PhysicalDeviceMemoryProperties &physical_device_memory_properties,
+    const vk::MemoryPropertyFlags &buffer_memory_properties) {
   vk::MemoryRequirements memory_requirements =
       device.getBufferMemoryRequirements(buffer);
   vk::MemoryAllocateInfo info;
   info.allocationSize = memory_requirements.size;
-  info.memoryTypeIndex = find_memory_type(
-      physical_device_memory_properties, memory_requirements.memoryTypeBits,
-      vk::MemoryPropertyFlagBits::eHostVisible |
-          vk::MemoryPropertyFlagBits::eHostCoherent);
+  info.memoryTypeIndex = find_memory_type(physical_device_memory_properties,
+                                          memory_requirements.memoryTypeBits,
+                                          buffer_memory_properties);
   return device.allocateMemoryUnique(info);
 }
 void fill_vertex_buffer(const vk::Device &device,
@@ -514,7 +513,9 @@ void VulkanController::initialize(vk::UniqueInstance instance,
       vk::BufferUsageFlagBits::eVertexBuffer);
 
   vertex_buffer_memory_ = vka::allocate_buffer_memory(
-      *device_, *vertex_buffer_, physical_device_.getMemoryProperties());
+      *device_, *vertex_buffer_, physical_device_.getMemoryProperties(),
+      vk::MemoryPropertyFlagBits::eHostVisible |
+          vk::MemoryPropertyFlagBits::eHostCoherent);
 
   (*device_).bindBufferMemory(*vertex_buffer_, *vertex_buffer_memory_, 0);
 

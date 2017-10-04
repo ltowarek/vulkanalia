@@ -53,10 +53,10 @@ uint32_t find_memory_type(
     const vk::PhysicalDeviceMemoryProperties physical_device_memory_properties,
     const uint32_t required_memory_type,
     const vk::MemoryPropertyFlags required_memory_properties);
-vk::UniqueDeviceMemory
-allocate_buffer_memory(const vk::Device &device, const vk::Buffer buffer,
-                       const vk::PhysicalDeviceMemoryProperties
-                           &physical_device_memory_properties);
+vk::UniqueDeviceMemory allocate_buffer_memory(
+    const vk::Device &device, const vk::Buffer &buffer,
+    const vk::PhysicalDeviceMemoryProperties &physical_device_memory_properties,
+    const vk::MemoryPropertyFlags &buffer_memory_properties);
 void fill_vertex_buffer(const vk::Device &device,
                         const vk::DeviceMemory &buffer_memory,
                         const std::vector<vka::Vertex> &vertices);
