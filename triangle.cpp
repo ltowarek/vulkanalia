@@ -548,6 +548,12 @@ void VulkanController::initialize(vk::UniqueInstance instance,
 
   command_pool_ = vka::create_command_pool(*device_, queue_index_);
 
+  create_vertex_buffer();
+  create_index_buffer();
+
+  recreate_swapchain(swapchain_extent_);
+}
+void VulkanController::create_vertex_buffer() {
   const uint32_t vertices_size =
       static_cast<uint32_t>(sizeof(vertices_[0]) * vertices_.size());
 
@@ -576,11 +582,12 @@ void VulkanController::initialize(vk::UniqueInstance instance,
 
   vka::copy_buffer(*device_, *staging_buffer, *vertex_buffer_, vertices_size,
                    *command_pool_, queue_index_);
-
+}
+void VulkanController::create_index_buffer() {
   const uint32_t indices_size =
       static_cast<uint32_t>(sizeof(indices_[0]) * indices_.size());
 
-  index_buffer_ = vka::create_buffer(*device_, vertices_size,
+  index_buffer_ = vka::create_buffer(*device_, indices_size,
                                      vk::BufferUsageFlagBits::eIndexBuffer |
                                          vk::BufferUsageFlagBits::eTransferDst);
 
@@ -590,10 +597,10 @@ void VulkanController::initialize(vk::UniqueInstance instance,
 
   (*device_).bindBufferMemory(*index_buffer_, *index_buffer_memory_, 0);
 
-  staging_buffer = vka::create_buffer(*device_, indices_size,
-                                      vk::BufferUsageFlagBits::eTransferSrc);
+  vk::UniqueBuffer staging_buffer = vka::create_buffer(
+      *device_, indices_size, vk::BufferUsageFlagBits::eTransferSrc);
 
-  staging_buffer_memory = vka::allocate_buffer_memory(
+  vk::UniqueDeviceMemory staging_buffer_memory = vka::allocate_buffer_memory(
       *device_, *staging_buffer, physical_device_.getMemoryProperties(),
       vk::MemoryPropertyFlagBits::eHostVisible |
           vk::MemoryPropertyFlagBits::eHostCoherent);
@@ -604,8 +611,6 @@ void VulkanController::initialize(vk::UniqueInstance instance,
 
   vka::copy_buffer(*device_, *staging_buffer, *index_buffer_, indices_size,
                    *command_pool_, queue_index_);
-
-  recreate_swapchain(swapchain_extent_);
 }
 void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
   swapchain_extent_ = swapchain_extent;

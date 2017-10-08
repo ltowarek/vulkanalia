@@ -127,6 +127,8 @@ public:
   void draw();
 
 private:
+  void create_vertex_buffer();
+  void create_index_buffer();
   vk::PhysicalDevice physical_device_;
   uint32_t queue_index_;
   vk::SurfaceFormatKHR surface_format_;
