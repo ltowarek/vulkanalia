@@ -146,6 +146,16 @@ void fill_vertex_buffer(const vk::Device &device,
   std::memcpy(pointer, vertices.data(), size);
   device.unmapMemory(buffer_memory);
 }
+void fill_index_buffer(const vk::Device &device,
+                       const vk::DeviceMemory &buffer_memory,
+                       const std::vector<uint16_t> &indices) {
+  const uint32_t size =
+      static_cast<uint32_t>(sizeof(indices[0]) * indices.size());
+  void *pointer;
+  device.mapMemory(buffer_memory, 0, size, vk::MemoryMapFlags(), &pointer);
+  std::memcpy(pointer, indices.data(), size);
+  device.unmapMemory(buffer_memory);
+}
 void copy_buffer(const vk::Device &device, const vk::Buffer &source_buffer,
                  const vk::Buffer &destination_buffer, const uint32_t size,
                  const vk::CommandPool &command_pool,
@@ -427,7 +437,7 @@ void record_command_buffers(
     const vk::RenderPass &render_pass, const vk::Pipeline &graphics_pipeline,
     const std::vector<vk::Framebuffer> &framebuffers,
     const vk::Extent2D &swapchain_extent, const vk::Buffer &vertex_buffer,
-    const std::vector<Vertex> &vertices) {
+    const vk::Buffer &index_buffer, const std::vector<uint16_t> &indices) {
   for (size_t i = 0; i < command_buffers.size(); ++i) {
     vk::CommandBufferBeginInfo command_buffer_begin_info;
     command_buffer_begin_info.flags =
@@ -449,7 +459,10 @@ void record_command_buffers(
     command_buffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics,
                                     graphics_pipeline);
     command_buffers[i].bindVertexBuffers(0, {vertex_buffer}, {0});
-    command_buffers[i].draw(static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+    command_buffers[i].bindIndexBuffer({index_buffer}, {0},
+                                       vk::IndexType::eUint16);
+    command_buffers[i].drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0,
+                                   0, 0);
     command_buffers[i].endRenderPass();
 
     command_buffers[i].end();
@@ -495,9 +508,11 @@ void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
   queue.waitIdle();
 }
 VulkanController::VulkanController()
-    : vertices_({{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-                 {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-                 {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}}){};
+    : vertices_({{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+                 {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+                 {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+                 {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}}),
+      indices_({0, 1, 2, 2, 3, 0}){};
 VulkanController::~VulkanController() {
   if (device_) {
     (*device_).waitIdle();
@@ -562,6 +577,34 @@ void VulkanController::initialize(vk::UniqueInstance instance,
   vka::copy_buffer(*device_, *staging_buffer, *vertex_buffer_, vertices_size,
                    *command_pool_, queue_index_);
 
+  const uint32_t indices_size =
+      static_cast<uint32_t>(sizeof(indices_[0]) * indices_.size());
+
+  index_buffer_ = vka::create_buffer(*device_, vertices_size,
+                                     vk::BufferUsageFlagBits::eIndexBuffer |
+                                         vk::BufferUsageFlagBits::eTransferDst);
+
+  index_buffer_memory_ = vka::allocate_buffer_memory(
+      *device_, *index_buffer_, physical_device_.getMemoryProperties(),
+      vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+  (*device_).bindBufferMemory(*index_buffer_, *index_buffer_memory_, 0);
+
+  staging_buffer = vka::create_buffer(*device_, indices_size,
+                                      vk::BufferUsageFlagBits::eTransferSrc);
+
+  staging_buffer_memory = vka::allocate_buffer_memory(
+      *device_, *staging_buffer, physical_device_.getMemoryProperties(),
+      vk::MemoryPropertyFlagBits::eHostVisible |
+          vk::MemoryPropertyFlagBits::eHostCoherent);
+
+  (*device_).bindBufferMemory(*staging_buffer, *staging_buffer_memory, 0);
+
+  vka::fill_index_buffer(*device_, *staging_buffer_memory, indices_);
+
+  vka::copy_buffer(*device_, *staging_buffer, *index_buffer_, indices_size,
+                   *command_pool_, queue_index_);
+
   recreate_swapchain(swapchain_extent_);
 }
 void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
@@ -611,7 +654,8 @@ void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
 
   vka::record_command_buffers(*device_, command_buffer_pointers, *render_pass_,
                               *graphics_pipeline_, framebuffer_pointers,
-                              swapchain_extent_, *vertex_buffer_, vertices_);
+                              swapchain_extent_, *vertex_buffer_,
+                              *index_buffer_, indices_);
 }
 void VulkanController::draw() {
   std::vector<vk::CommandBuffer> command_buffer_pointers;
@@ -640,6 +684,8 @@ void VulkanController::release_swapchain() {
 }
 void VulkanController::release() {
   release_swapchain();
+  index_buffer_.release();
+  index_buffer_memory_.release();
   vertex_buffer_.release();
   vertex_buffer_memory_.release();
   command_pool_.release();

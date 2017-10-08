@@ -60,6 +60,9 @@ vk::UniqueDeviceMemory allocate_buffer_memory(
 void fill_vertex_buffer(const vk::Device &device,
                         const vk::DeviceMemory &buffer_memory,
                         const std::vector<vka::Vertex> &vertices);
+void fill_index_buffer(const vk::Device &device,
+                       const vk::DeviceMemory &buffer_memory,
+                       const std::vector<uint16_t> &indices);
 void copy_buffer(const vk::Device &device, const vk::Buffer &source_buffer,
                  const vk::Buffer &destination_buffer, const uint32_t size,
                  const vk::CommandPool &command_pool,
@@ -108,7 +111,7 @@ void record_command_buffers(
     const vk::RenderPass &render_pass, const vk::Pipeline &graphics_pipeline,
     const std::vector<vk::Framebuffer> &framebuffers,
     const vk::Extent2D &swapchain_extent, const vk::Buffer &vertex_buffer,
-    const std::vector<Vertex> &vertices);
+    const vk::Buffer &index_buffer, const std::vector<uint16_t> &indices);
 void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
                 const std::vector<vk::CommandBuffer> &command_buffers,
                 const uint32_t queue_index);
@@ -135,6 +138,8 @@ private:
   vk::UniqueCommandPool command_pool_;
   vk::UniqueBuffer vertex_buffer_;
   vk::UniqueDeviceMemory vertex_buffer_memory_;
+  vk::UniqueBuffer index_buffer_;
+  vk::UniqueDeviceMemory index_buffer_memory_;
   vk::UniqueSwapchainKHR swapchain_;
   std::vector<vk::UniqueImageView> swapchain_image_views_;
   vk::UniqueRenderPass render_pass_;
@@ -143,6 +148,7 @@ private:
   std::vector<vk::UniqueFramebuffer> framebuffers_;
 
   const std::vector<Vertex> vertices_;
+  const std::vector<uint16_t> indices_;
 };
 class TriangleApplication {
 public:

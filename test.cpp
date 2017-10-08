@@ -101,24 +101,67 @@ protected:
     }
     return *vertex_buffer_memory_;
   }
-  const vk::Buffer &staging_buffer() {
-    if (!staging_buffer_) {
+  const vk::Buffer &index_buffer() {
+    if (!index_buffer_) {
+      const uint32_t size =
+          static_cast<uint32_t>(sizeof(indices()[0]) * indices().size());
+      index_buffer_ =
+          vka::create_buffer(device(), size,
+                             vk::BufferUsageFlagBits::eIndexBuffer |
+                                 vk::BufferUsageFlagBits::eTransferDst);
+    }
+    return *index_buffer_;
+  }
+  const vk::DeviceMemory &index_buffer_memory() {
+    if (!index_buffer_memory_) {
+      index_buffer_memory_ = vka::allocate_buffer_memory(
+          device(), index_buffer(), physical_device().getMemoryProperties(),
+          vk::MemoryPropertyFlagBits::eDeviceLocal);
+      device().bindBufferMemory(index_buffer(), *index_buffer_memory_, 0);
+    }
+    return *index_buffer_memory_;
+  }
+  const vk::Buffer &staging_vertex_buffer() {
+    if (!staging_vertex_buffer_) {
       const uint32_t size =
           static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
-      staging_buffer_ = vka::create_buffer(
+      staging_vertex_buffer_ = vka::create_buffer(
           device(), size, vk::BufferUsageFlagBits::eTransferSrc);
     }
-    return *staging_buffer_;
+    return *staging_vertex_buffer_;
   }
-  const vk::DeviceMemory &staging_buffer_memory() {
-    if (!staging_buffer_memory_) {
-      staging_buffer_memory_ = vka::allocate_buffer_memory(
-          device(), staging_buffer(), physical_device().getMemoryProperties(),
+  const vk::DeviceMemory &staging_vertex_buffer_memory() {
+    if (!staging_vertex_buffer_memory_) {
+      staging_vertex_buffer_memory_ = vka::allocate_buffer_memory(
+          device(), staging_vertex_buffer(),
+          physical_device().getMemoryProperties(),
           vk::MemoryPropertyFlagBits::eHostVisible |
               vk::MemoryPropertyFlagBits::eHostCoherent);
-      device().bindBufferMemory(staging_buffer(), *staging_buffer_memory_, 0);
+      device().bindBufferMemory(staging_vertex_buffer(),
+                                *staging_vertex_buffer_memory_, 0);
     }
-    return *staging_buffer_memory_;
+    return *staging_vertex_buffer_memory_;
+  }
+  const vk::Buffer &staging_index_buffer() {
+    if (!staging_index_buffer_) {
+      const uint32_t size =
+          static_cast<uint32_t>(sizeof(indices()[0]) * indices().size());
+      staging_index_buffer_ = vka::create_buffer(
+          device(), size, vk::BufferUsageFlagBits::eTransferSrc);
+    }
+    return *staging_index_buffer_;
+  }
+  const vk::DeviceMemory &staging_index_buffer_memory() {
+    if (!staging_index_buffer_memory_) {
+      staging_index_buffer_memory_ = vka::allocate_buffer_memory(
+          device(), staging_index_buffer(),
+          physical_device().getMemoryProperties(),
+          vk::MemoryPropertyFlagBits::eHostVisible |
+              vk::MemoryPropertyFlagBits::eHostCoherent);
+      device().bindBufferMemory(staging_index_buffer(),
+                                *staging_index_buffer_memory_, 0);
+    }
+    return *staging_index_buffer_memory_;
   }
   const vk::SurfaceKHR &surface() {
     if (!surface_) {
@@ -225,6 +268,7 @@ protected:
     return command_buffers;
   }
   const std::vector<vka::Vertex> vertices() { return vertices_; }
+  const std::vector<uint16_t> indices() { return indices_; }
   void release() {
     for (auto &framebuffer : framebuffers_) {
       framebuffer.release();
@@ -243,10 +287,14 @@ protected:
 
     swapchain_.release();
 
+    index_buffer_.release();
+    index_buffer_memory_.release();
     vertex_buffer_.release();
     vertex_buffer_memory_.release();
-    staging_buffer_.release();
-    staging_buffer_memory_.release();
+    staging_index_buffer_.release();
+    staging_index_buffer_memory_.release();
+    staging_vertex_buffer_.release();
+    staging_vertex_buffer_memory_.release();
     command_pool_.release();
     device_.release();
     surface_.release();
@@ -260,6 +308,7 @@ private:
       {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
       {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
       {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+  const std::vector<uint16_t> indices_ = {0, 1, 2, 2, 3, 0};
   WindowManager window_manager_ = WindowManager();
   vk::PhysicalDevice physical_device_ = vk::PhysicalDevice();
   std::vector<vk::QueueFamilyProperties> queue_family_properties_ =
@@ -269,10 +318,16 @@ private:
   vk::UniqueSurfaceKHR surface_ = vk::UniqueSurfaceKHR();
   vk::UniqueDevice device_ = vk::UniqueDevice();
   vk::UniqueCommandPool command_pool_ = vk::UniqueCommandPool();
-  vk::UniqueDeviceMemory staging_buffer_memory_ = vk::UniqueDeviceMemory();
-  vk::UniqueBuffer staging_buffer_ = vk::UniqueBuffer();
+  vk::UniqueDeviceMemory staging_vertex_buffer_memory_ =
+      vk::UniqueDeviceMemory();
+  vk::UniqueBuffer staging_vertex_buffer_ = vk::UniqueBuffer();
+  vk::UniqueDeviceMemory staging_index_buffer_memory_ =
+      vk::UniqueDeviceMemory();
+  vk::UniqueBuffer staging_index_buffer_ = vk::UniqueBuffer();
   vk::UniqueDeviceMemory vertex_buffer_memory_ = vk::UniqueDeviceMemory();
   vk::UniqueBuffer vertex_buffer_ = vk::UniqueBuffer();
+  vk::UniqueDeviceMemory index_buffer_memory_ = vk::UniqueDeviceMemory();
+  vk::UniqueBuffer index_buffer_ = vk::UniqueBuffer();
   vk::UniqueSwapchainKHR swapchain_ = vk::UniqueSwapchainKHR();
   std::vector<vk::UniqueImageView> swapchain_image_views_ =
       std::vector<vk::UniqueImageView>();
@@ -428,23 +483,30 @@ TEST_F(TriangleTest, AllocatesMemoryForVertexBufferWithoutThrowingException) {
 
 TEST_F(TriangleTest, AllocatesMemoryForStagingBufferWithoutThrowingException) {
   EXPECT_NO_THROW(vka::allocate_buffer_memory(
-      device(), staging_buffer(), physical_device().getMemoryProperties(),
+      device(), staging_vertex_buffer(),
+      physical_device().getMemoryProperties(),
       vk::MemoryPropertyFlagBits::eHostVisible |
           vk::MemoryPropertyFlagBits::eHostCoherent));
 }
 
-TEST_F(TriangleTest, FillsStagingBufferWithoutThrowingException) {
-  EXPECT_NO_THROW(
-      vka::fill_vertex_buffer(device(), staging_buffer_memory(), vertices()));
+TEST_F(TriangleTest, FillsStagingVertexBufferWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::fill_vertex_buffer(
+      device(), staging_vertex_buffer_memory(), vertices()));
+}
+
+TEST_F(TriangleTest, FillsStagingIndexBufferWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::fill_index_buffer(
+      device(), staging_index_buffer_memory(), indices()));
 }
 
 TEST_F(TriangleTest, CopiesBufferWithoutThrowingException) {
   vertex_buffer_memory();
   const uint32_t size =
       static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
-  vka::fill_vertex_buffer(device(), staging_buffer_memory(), vertices());
-  EXPECT_NO_THROW(vka::copy_buffer(device(), staging_buffer(), vertex_buffer(),
-                                   size, command_pool(), queue_index()));
+  vka::fill_vertex_buffer(device(), staging_vertex_buffer_memory(), vertices());
+  EXPECT_NO_THROW(vka::copy_buffer(device(), staging_vertex_buffer(),
+                                   vertex_buffer(), size, command_pool(),
+                                   queue_index()));
 }
 
 TEST_F(TriangleTest, CreatesCommandBuffersWithoutThrowingException) {
@@ -660,18 +722,26 @@ TEST_F(TriangleTest, CreatesFramebuffersWithoutThrowingException) {
 
 TEST_F(TriangleTest, RecordsCommandBuffersWithoutThrowingException) {
   vertex_buffer_memory();
+  index_buffer_memory();
   EXPECT_NO_THROW(vka::record_command_buffers(
       device(), command_buffers(), render_pass(), graphics_pipeline(),
-      framebuffers(), swapchain_extent(), vertex_buffer(), vertices()));
+      framebuffers(), swapchain_extent(), vertex_buffer(), index_buffer(),
+      indices()));
 }
 
 TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
   vertex_buffer_memory();
-  const uint32_t size =
+  const uint32_t vertices_size =
       static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
-  vka::fill_vertex_buffer(device(), staging_buffer_memory(), vertices());
-  vka::copy_buffer(device(), staging_buffer(), vertex_buffer(), size,
-                   command_pool(), queue_index());
+  vka::fill_vertex_buffer(device(), staging_vertex_buffer_memory(), vertices());
+  vka::copy_buffer(device(), staging_vertex_buffer(), vertex_buffer(),
+                   vertices_size, command_pool(), queue_index());
+  index_buffer_memory();
+  const uint32_t indices_size =
+      static_cast<uint32_t>(sizeof(indices()[0]) * indices().size());
+  vka::fill_index_buffer(device(), staging_index_buffer_memory(), indices());
+  vka::copy_buffer(device(), staging_index_buffer(), index_buffer(),
+                   indices_size, command_pool(), queue_index());
   std::vector<vk::UniqueCommandBuffer> command_buffers =
       vka::create_command_buffers(device(), command_pool(),
                                   static_cast<uint32_t>(framebuffers().size()));
@@ -681,7 +751,8 @@ TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
   }
   vka::record_command_buffers(device(), command_buffer_pointers, render_pass(),
                               graphics_pipeline(), framebuffers(),
-                              swapchain_extent(), vertex_buffer(), vertices());
+                              swapchain_extent(), vertex_buffer(),
+                              index_buffer(), indices());
   EXPECT_NO_THROW(vka::draw_frame(device(), swapchain(),
                                   command_buffer_pointers, queue_index()));
 }
