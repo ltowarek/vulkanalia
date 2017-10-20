@@ -314,8 +314,12 @@ vk::UniqueShaderModule create_shader_module(const vk::Device &device,
   info.pCode = reinterpret_cast<const uint32_t *>(code.data());
   return device.createShaderModuleUnique(info);
 }
-vk::UniquePipelineLayout create_pipeline_layout(const vk::Device &device) {
+vk::UniquePipelineLayout
+create_pipeline_layout(const vk::Device &device,
+                       const vk::DescriptorSetLayout &descriptor_set_layout) {
   vk::PipelineLayoutCreateInfo info;
+  info.setLayoutCount = 1;
+  info.pSetLayouts = &descriptor_set_layout;
   return device.createPipelineLayoutUnique(info);
 }
 vk::UniqueRenderPass create_render_pass(const vk::Device &device,
@@ -397,7 +401,8 @@ void update_descriptor_sets(
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
                          const vk::RenderPass &render_pass,
-                         const vk::Extent2D &swapchain_extent) {
+                         const vk::Extent2D &swapchain_extent,
+                         const vk::PipelineLayout &pipeline_layout) {
   vk::GraphicsPipelineCreateInfo info;
 
   vk::UniqueShaderModule vertex_shader_module =
@@ -460,7 +465,7 @@ create_graphics_pipeline(const vk::Device &device,
   rasterization_state.polygonMode = vk::PolygonMode::eFill;
   rasterization_state.lineWidth = 1.0f;
   rasterization_state.cullMode = vk::CullModeFlagBits::eBack;
-  rasterization_state.frontFace = vk::FrontFace::eClockwise;
+  rasterization_state.frontFace = vk::FrontFace::eCounterClockwise;
   rasterization_state.depthBiasEnable = VK_FALSE;
   info.pRasterizationState = &rasterization_state;
 
@@ -478,8 +483,7 @@ create_graphics_pipeline(const vk::Device &device,
   color_blend_state.pAttachments = &color_blend_attachment_state;
   info.pColorBlendState = &color_blend_state;
 
-  vk::UniquePipelineLayout layout = create_pipeline_layout(device);
-  info.layout = *layout;
+  info.layout = pipeline_layout;
 
   info.renderPass = render_pass;
 
@@ -508,9 +512,11 @@ void record_command_buffers(
     const vk::Device &device,
     const std::vector<vk::CommandBuffer> &command_buffers,
     const vk::RenderPass &render_pass, const vk::Pipeline &graphics_pipeline,
+    const vk::PipelineLayout &pipeline_layout,
     const std::vector<vk::Framebuffer> &framebuffers,
     const vk::Extent2D &swapchain_extent, const vk::Buffer &vertex_buffer,
-    const vk::Buffer &index_buffer, const std::vector<uint16_t> &indices) {
+    const vk::Buffer &index_buffer, const std::vector<uint16_t> &indices,
+    const std::vector<vk::DescriptorSet> &descriptor_sets) {
   for (size_t i = 0; i < command_buffers.size(); ++i) {
     vk::CommandBufferBeginInfo command_buffer_begin_info;
     command_buffer_begin_info.flags =
@@ -534,6 +540,9 @@ void record_command_buffers(
     command_buffers[i].bindVertexBuffers(0, {vertex_buffer}, {0});
     command_buffers[i].bindIndexBuffer({index_buffer}, {0},
                                        vk::IndexType::eUint16);
+    command_buffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                          pipeline_layout, 0, descriptor_sets,
+                                          {});
     command_buffers[i].drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0,
                                    0, 0);
     command_buffers[i].endRenderPass();
@@ -624,6 +633,21 @@ void VulkanController::initialize(vk::UniqueInstance instance,
   create_uniform_buffer();
   create_vertex_buffer();
   create_index_buffer();
+
+  descriptor_pool_ = vka::create_descriptor_pool(*device_);
+
+  descriptor_set_layout_ = vka::create_descriptor_set_layout(*device_);
+
+  descriptor_sets_ = vka::create_descriptor_sets(*device_, *descriptor_pool_,
+                                                 *descriptor_set_layout_);
+
+  std::vector<vk::DescriptorSet> descriptor_set_pointers;
+  for (const auto &descriptor_set : descriptor_sets_) {
+    descriptor_set_pointers.push_back(*descriptor_set);
+  }
+
+  vka::update_descriptor_sets(*device_, descriptor_set_pointers,
+                              *uniform_buffer_);
 
   recreate_swapchain(swapchain_extent_);
 }
@@ -741,8 +765,16 @@ void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
 
   render_pass_ = vka::create_render_pass(*device_, surface_format_.format);
 
-  graphics_pipeline_ =
-      vka::create_graphics_pipeline(*device_, *render_pass_, swapchain_extent_);
+  std::vector<vk::DescriptorSet> descriptor_set_pointers;
+  for (const auto &descriptor_set : descriptor_sets_) {
+    descriptor_set_pointers.push_back(*descriptor_set);
+  }
+
+  pipeline_layout_ =
+      vka::create_pipeline_layout(*device_, *descriptor_set_layout_);
+
+  graphics_pipeline_ = vka::create_graphics_pipeline(
+      *device_, *render_pass_, swapchain_extent_, *pipeline_layout_);
 
   framebuffers_ =
       vka::create_framebuffers(*device_, *render_pass_, swapchain_extent_,
@@ -761,10 +793,10 @@ void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
     command_buffer_pointers.push_back(*command_buffer);
   }
 
-  vka::record_command_buffers(*device_, command_buffer_pointers, *render_pass_,
-                              *graphics_pipeline_, framebuffer_pointers,
-                              swapchain_extent_, *vertex_buffer_,
-                              *index_buffer_, indices_);
+  vka::record_command_buffers(
+      *device_, command_buffer_pointers, *render_pass_, *graphics_pipeline_,
+      *pipeline_layout_, framebuffer_pointers, swapchain_extent_,
+      *vertex_buffer_, *index_buffer_, indices_, descriptor_set_pointers);
 }
 void VulkanController::update() {
   static auto start_time = std::chrono::high_resolution_clock::now();
@@ -790,6 +822,7 @@ void VulkanController::release_swapchain() {
   }
 
   graphics_pipeline_.release();
+  pipeline_layout_.release();
   render_pass_.release();
 
   for (auto &image_view : swapchain_image_views_) {
@@ -806,6 +839,11 @@ void VulkanController::release() {
   vertex_buffer_memory_.release();
   uniform_buffer_.release();
   uniform_buffer_memory_.release();
+  for (auto &descriptor_set : descriptor_sets_) {
+    descriptor_set.release();
+  }
+  descriptor_set_layout_.release();
+  descriptor_pool_.release();
   command_pool_.release();
   device_.release();
   surface_.release();

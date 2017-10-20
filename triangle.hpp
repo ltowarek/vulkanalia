@@ -110,7 +110,9 @@ create_swapchain_image_views(const vk::Device &device,
 std::vector<char> read_file(const std::string &file_name);
 vk::UniqueShaderModule create_shader_module(const vk::Device &device,
                                             const std::vector<char> &code);
-vk::UniquePipelineLayout create_pipeline_layout(const vk::Device &device);
+vk::UniquePipelineLayout
+create_pipeline_layout(const vk::Device &device,
+                       const vk::DescriptorSetLayout &descriptor_set_layout);
 vk::UniqueRenderPass create_render_pass(const vk::Device &device,
                                         const vk::Format &surface_format);
 vk::UniqueDescriptorPool create_descriptor_pool(const vk::Device &device);
@@ -127,7 +129,8 @@ void update_descriptor_sets(
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
                          const vk::RenderPass &render_pass,
-                         const vk::Extent2D &swapchain_extent);
+                         const vk::Extent2D &swapchain_extent,
+                         const vk::PipelineLayout &pipeline_layout);
 std::vector<vk::UniqueFramebuffer>
 create_framebuffers(const vk::Device &device, const vk::RenderPass &render_pass,
                     const vk::Extent2D &swapchain_extent,
@@ -136,9 +139,11 @@ void record_command_buffers(
     const vk::Device &device,
     const std::vector<vk::CommandBuffer> &command_buffers,
     const vk::RenderPass &render_pass, const vk::Pipeline &graphics_pipeline,
+    const vk::PipelineLayout &pipeline_layout,
     const std::vector<vk::Framebuffer> &framebuffers,
     const vk::Extent2D &swapchain_extent, const vk::Buffer &vertex_buffer,
-    const vk::Buffer &index_buffer, const std::vector<uint16_t> &indices);
+    const vk::Buffer &index_buffer, const std::vector<uint16_t> &indices,
+    const std::vector<vk::DescriptorSet> &descriptor_sets);
 void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
                 const std::vector<vk::CommandBuffer> &command_buffers,
                 const uint32_t queue_index);
@@ -168,6 +173,9 @@ private:
   vk::UniqueSurfaceKHR surface_;
   vk::UniqueDevice device_;
   vk::UniqueCommandPool command_pool_;
+  vk::UniqueDescriptorPool descriptor_pool_;
+  vk::UniqueDescriptorSetLayout descriptor_set_layout_;
+  std::vector<vk::UniqueDescriptorSet> descriptor_sets_;
   vk::UniqueBuffer uniform_buffer_;
   vk::UniqueDeviceMemory uniform_buffer_memory_;
   vk::UniqueBuffer vertex_buffer_;
@@ -177,6 +185,7 @@ private:
   vk::UniqueSwapchainKHR swapchain_;
   std::vector<vk::UniqueImageView> swapchain_image_views_;
   vk::UniqueRenderPass render_pass_;
+  vk::UniquePipelineLayout pipeline_layout_;
   vk::UniquePipeline graphics_pipeline_;
   std::vector<vk::UniqueCommandBuffer> command_buffers_;
   std::vector<vk::UniqueFramebuffer> framebuffers_;

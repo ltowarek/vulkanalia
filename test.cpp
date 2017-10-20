@@ -279,10 +279,17 @@ protected:
     }
     return *render_pass_;
   }
+  const vk::PipelineLayout &pipeline_layout() {
+    if (!pipeline_layout_) {
+      pipeline_layout_ =
+          vka::create_pipeline_layout(device(), descriptor_set_layout());
+    }
+    return *pipeline_layout_;
+  }
   const vk::Pipeline &graphics_pipeline() {
     if (!graphics_pipeline_) {
       graphics_pipeline_ = vka::create_graphics_pipeline(
-          device(), render_pass(), swapchain_extent());
+          device(), render_pass(), swapchain_extent(), pipeline_layout());
     }
     return *graphics_pipeline_;
   }
@@ -324,6 +331,7 @@ protected:
     }
 
     graphics_pipeline_.release();
+    pipeline_layout_.release();
     render_pass_.release();
 
     for (auto &image_view : swapchain_image_views_) {
@@ -342,6 +350,9 @@ protected:
     staging_vertex_buffer_memory_.release();
     uniform_buffer_.release();
     uniform_buffer_memory_.release();
+    for (auto &descriptor_set : descriptor_sets_) {
+      descriptor_set.release();
+    }
     descriptor_set_layout_.release();
     descriptor_pool_.release();
     command_pool_.release();
@@ -390,6 +401,7 @@ private:
       std::vector<vk::UniqueImageView>();
   vk::UniqueRenderPass render_pass_ = vk::UniqueRenderPass();
   vk::UniquePipeline graphics_pipeline_ = vk::UniquePipeline();
+  vk::UniquePipelineLayout pipeline_layout_ = vk::UniquePipelineLayout();
   std::vector<vk::UniqueCommandBuffer> command_buffers_ =
       std::vector<vk::UniqueCommandBuffer>();
   std::vector<vk::UniqueFramebuffer> framebuffers_ =
@@ -792,7 +804,8 @@ TEST_F(TriangleTest, CreatesShaderModuleWithoutThrowingException) {
 }
 
 TEST_F(TriangleTest, CreatesPipelineLayoutWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::create_pipeline_layout(device()));
+  EXPECT_NO_THROW(
+      vka::create_pipeline_layout(device(), descriptor_set_layout()));
 }
 
 TEST_F(TriangleTest, CreatesRenderPassWithoutThrowingException) {
@@ -820,8 +833,8 @@ TEST_F(TriangleTest, UpdatesDescriptorSetsWithoutThrowingException) {
 }
 
 TEST_F(TriangleTest, CreatesGraphicsPipelineWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::create_graphics_pipeline(device(), render_pass(),
-                                                swapchain_extent()));
+  EXPECT_NO_THROW(vka::create_graphics_pipeline(
+      device(), render_pass(), swapchain_extent(), pipeline_layout()));
 }
 
 TEST_F(TriangleTest, CreatesFramebuffersWithoutThrowingException) {
@@ -832,10 +845,12 @@ TEST_F(TriangleTest, CreatesFramebuffersWithoutThrowingException) {
 TEST_F(TriangleTest, RecordsCommandBuffersWithoutThrowingException) {
   vertex_buffer_memory();
   index_buffer_memory();
+  uniform_buffer_memory();
+  vka::update_descriptor_sets(device(), descriptor_sets(), uniform_buffer());
   EXPECT_NO_THROW(vka::record_command_buffers(
       device(), command_buffers(), render_pass(), graphics_pipeline(),
-      framebuffers(), swapchain_extent(), vertex_buffer(), index_buffer(),
-      indices()));
+      pipeline_layout(), framebuffers(), swapchain_extent(), vertex_buffer(),
+      index_buffer(), indices(), descriptor_sets()));
 }
 
 TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
@@ -858,10 +873,12 @@ TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
   for (const auto &command_buffer : command_buffers) {
     command_buffer_pointers.push_back(*command_buffer);
   }
-  vka::record_command_buffers(device(), command_buffer_pointers, render_pass(),
-                              graphics_pipeline(), framebuffers(),
-                              swapchain_extent(), vertex_buffer(),
-                              index_buffer(), indices());
+  uniform_buffer_memory();
+  vka::update_descriptor_sets(device(), descriptor_sets(), uniform_buffer());
+  vka::record_command_buffers(
+      device(), command_buffer_pointers, render_pass(), graphics_pipeline(),
+      pipeline_layout(), framebuffers(), swapchain_extent(), vertex_buffer(),
+      index_buffer(), indices(), descriptor_sets());
   EXPECT_NO_THROW(vka::draw_frame(device(), swapchain(),
                                   command_buffer_pointers, queue_index()));
 }
