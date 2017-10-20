@@ -19,6 +19,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.hpp>
 
@@ -141,9 +142,12 @@ public:
   void recreate_swapchain(vk::Extent2D swapchain_extent);
   void release();
   void release_swapchain();
+  void update();
   void draw();
 
 private:
+  void create_uniform_buffer();
+  void update_uniform_buffer(const float delta_time);
   void create_vertex_buffer();
   void create_index_buffer();
   vk::PhysicalDevice physical_device_;
@@ -155,6 +159,8 @@ private:
   vk::UniqueSurfaceKHR surface_;
   vk::UniqueDevice device_;
   vk::UniqueCommandPool command_pool_;
+  vk::UniqueBuffer uniform_buffer_;
+  vk::UniqueDeviceMemory uniform_buffer_memory_;
   vk::UniqueBuffer vertex_buffer_;
   vk::UniqueDeviceMemory vertex_buffer_memory_;
   vk::UniqueBuffer index_buffer_;

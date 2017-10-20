@@ -17,6 +17,8 @@
 #include "triangle.hpp"
 #include <fstream>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace vka {
 float get_delta_time_per_second(
     const std::chrono::time_point<std::chrono::high_resolution_clock>
@@ -579,10 +581,41 @@ void VulkanController::initialize(vk::UniqueInstance instance,
 
   command_pool_ = vka::create_command_pool(*device_, queue_index_);
 
+  create_uniform_buffer();
   create_vertex_buffer();
   create_index_buffer();
 
   recreate_swapchain(swapchain_extent_);
+}
+void VulkanController::create_uniform_buffer() {
+  const uint32_t ubo_size =
+      static_cast<uint32_t>(sizeof(vka::UniformBufferObject));
+
+  uniform_buffer_ = vka::create_buffer(*device_, ubo_size,
+                                       vk::BufferUsageFlagBits::eUniformBuffer);
+
+  uniform_buffer_memory_ = vka::allocate_buffer_memory(
+      *device_, *uniform_buffer_, physical_device_.getMemoryProperties(),
+      vk::MemoryPropertyFlagBits::eHostVisible |
+          vk::MemoryPropertyFlagBits::eHostCoherent);
+
+  (*device_).bindBufferMemory(*uniform_buffer_, *uniform_buffer_memory_, 0);
+
+  vka::fill_uniform_buffer(*device_, *uniform_buffer_memory_, {});
+}
+void VulkanController::update_uniform_buffer(const float delta_time) {
+  vka::UniformBufferObject ubo;
+  ubo.model = glm::rotate(glm::mat4(1.0f), delta_time * glm::radians(90.0f),
+                          glm::vec3(0.0f, 0.0f, 1.0f));
+  ubo.view =
+      glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+                  glm::vec3(0.0f, 0.0f, 1.0f));
+  ubo.projection = glm::perspective(
+      glm::radians(45.0f),
+      swapchain_extent_.width / static_cast<float>(swapchain_extent_.height),
+      0.1f, 10.0f);
+  ubo.projection[1][1] *= -1;
+  vka::fill_uniform_buffer(*device_, *uniform_buffer_memory_, ubo);
 }
 void VulkanController::create_vertex_buffer() {
   const uint32_t vertices_size =
@@ -693,6 +726,13 @@ void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
                               swapchain_extent_, *vertex_buffer_,
                               *index_buffer_, indices_);
 }
+void VulkanController::update() {
+  static auto start_time = std::chrono::high_resolution_clock::now();
+  const auto current_time = std::chrono::high_resolution_clock::now();
+  const float delta_time =
+      vka::get_delta_time_per_second(start_time, current_time);
+  update_uniform_buffer(delta_time);
+}
 void VulkanController::draw() {
   std::vector<vk::CommandBuffer> command_buffer_pointers;
   for (const auto &command_buffer : command_buffers_) {
@@ -724,6 +764,8 @@ void VulkanController::release() {
   index_buffer_memory_.release();
   vertex_buffer_.release();
   vertex_buffer_memory_.release();
+  uniform_buffer_.release();
+  uniform_buffer_memory_.release();
   command_pool_.release();
   device_.release();
   surface_.release();
@@ -763,6 +805,7 @@ void TriangleApplication::run() {
 
   while (!glfwWindowShouldClose(window_)) {
     glfwPollEvents();
+    vulkan_controller_.update();
     vulkan_controller_.draw();
   }
 
