@@ -770,6 +770,10 @@ TEST_F(TriangleTest, CreatesRenderPassWithoutThrowingException) {
       vka::create_render_pass(device(), vk::Format::eB8G8R8A8Unorm));
 }
 
+TEST_F(TriangleTest, CreatesDescriptorPoolWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_descriptor_pool(device()));
+}
+
 TEST_F(TriangleTest, CreatesDescriptorSetLayoutWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_descriptor_set_layout(device()));
 }

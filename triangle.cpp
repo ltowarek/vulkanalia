@@ -341,6 +341,18 @@ vk::UniqueRenderPass create_render_pass(const vk::Device &device,
 
   return device.createRenderPassUnique(info);
 }
+vk::UniqueDescriptorPool create_descriptor_pool(const vk::Device &device) {
+  vk::DescriptorPoolSize size;
+  size.type = vk::DescriptorType::eUniformBuffer;
+  size.descriptorCount = 1;
+
+  vk::DescriptorPoolCreateInfo info;
+  info.poolSizeCount = 1;
+  info.pPoolSizes = &size;
+  info.maxSets = 1;
+
+  return device.createDescriptorPoolUnique(info);
+}
 vk::UniqueDescriptorSetLayout
 create_descriptor_set_layout(const vk::Device &device) {
   vk::DescriptorSetLayoutBinding binding;
