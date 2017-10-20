@@ -194,6 +194,17 @@ protected:
     }
     return *descriptor_set_layout_;
   }
+  const std::vector<vk::DescriptorSet> descriptor_sets() {
+    if (descriptor_sets_.empty()) {
+      descriptor_sets_ = vka::create_descriptor_sets(
+          device(), descriptor_pool(), descriptor_set_layout());
+    }
+    std::vector<vk::DescriptorSet> descriptor_sets;
+    for (const auto &descriptor_set : descriptor_sets_) {
+      descriptor_sets.push_back(*descriptor_set);
+    }
+    return descriptor_sets;
+  }
   const vk::SurfaceKHR &surface() {
     if (!surface_) {
       surface_ = vk::UniqueSurfaceKHR(window_manager_.surface(instance()));
@@ -360,6 +371,8 @@ private:
   vk::UniqueDescriptorPool descriptor_pool_ = vk::UniqueDescriptorPool();
   vk::UniqueDescriptorSetLayout descriptor_set_layout_ =
       vk::UniqueDescriptorSetLayout();
+  std::vector<vk::UniqueDescriptorSet> descriptor_sets_ =
+      std::vector<vk::UniqueDescriptorSet>();
   vk::UniqueDeviceMemory uniform_buffer_memory_ = vk::UniqueDeviceMemory();
   vk::UniqueBuffer uniform_buffer_ = vk::UniqueBuffer();
   vk::UniqueDeviceMemory staging_vertex_buffer_memory_ =
@@ -791,13 +804,19 @@ TEST_F(TriangleTest, CreatesDescriptorPoolWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_descriptor_pool(device()));
 }
 
-TEST_F(TriangleTest, CreatesDescriptorSetWithoutThrowingException) {
+TEST_F(TriangleTest, CreatesDescriptorSetLayoutWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_descriptor_set_layout(device()));
+}
+
+TEST_F(TriangleTest, CreatesDescriptorSetsWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_descriptor_sets(device(), descriptor_pool(),
                                               descriptor_set_layout()));
 }
 
-TEST_F(TriangleTest, CreatesDescriptorSetLayoutWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::create_descriptor_set_layout(device()));
+TEST_F(TriangleTest, UpdatesDescriptorSetsWithoutThrowingException) {
+  uniform_buffer_memory();
+  EXPECT_NO_THROW(vka::update_descriptor_sets(device(), descriptor_sets(),
+                                              uniform_buffer()));
 }
 
 TEST_F(TriangleTest, CreatesGraphicsPipelineWithoutThrowingException) {

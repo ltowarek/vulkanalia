@@ -120,6 +120,10 @@ std::vector<vk::UniqueDescriptorSet>
 create_descriptor_sets(const vk::Device &device,
                        const vk::DescriptorPool &descriptor_pool,
                        const vk::DescriptorSetLayout &descriptor_set_layout);
+void update_descriptor_sets(
+    const vk::Device &device,
+    const std::vector<vk::DescriptorSet> &descriptor_sets,
+    const vk::Buffer &uniform_buffer);
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
                          const vk::RenderPass &render_pass,

@@ -378,6 +378,22 @@ create_descriptor_sets(const vk::Device &device,
   info.pSetLayouts = layouts.data();
   return device.allocateDescriptorSetsUnique(info);
 }
+void update_descriptor_sets(
+    const vk::Device &device,
+    const std::vector<vk::DescriptorSet> &descriptor_sets,
+    const vk::Buffer &uniform_buffer) {
+  vk::DescriptorBufferInfo buffer_info;
+  buffer_info.buffer = uniform_buffer;
+  buffer_info.range = sizeof(vka::UniformBufferObject);
+
+  vk::WriteDescriptorSet descriptor_write;
+  descriptor_write.dstSet = descriptor_sets[0];
+  descriptor_write.descriptorType = vk::DescriptorType::eUniformBuffer;
+  descriptor_write.descriptorCount = 1;
+  descriptor_write.pBufferInfo = &buffer_info;
+
+  device.updateDescriptorSets({descriptor_write}, {});
+}
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
                          const vk::RenderPass &render_pass,
