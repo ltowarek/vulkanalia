@@ -18,6 +18,15 @@
 #include <fstream>
 
 namespace vka {
+float get_delta_time_per_second(
+    const std::chrono::time_point<std::chrono::high_resolution_clock>
+        start_time,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>
+        current_time) {
+  const auto delta_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+      current_time - start_time);
+  return delta_time.count() / static_cast<float>(std::milli::den);
+}
 vk::VertexInputBindingDescription get_binding_description() {
   vk::VertexInputBindingDescription description;
   description.binding = 0;

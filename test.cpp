@@ -368,6 +368,34 @@ private:
 
 vk::UniqueInstance TriangleTest::instance_ = vk::UniqueInstance();
 
+TEST_F(TriangleTest, Returns0GivenDeltaTimeIs0) {
+  const auto time_value =
+      std::chrono::time_point<std::chrono::high_resolution_clock>(
+          std::chrono::milliseconds(2));
+  EXPECT_FLOAT_EQ(vka::get_delta_time_per_second(time_value, time_value), 0.0f);
+}
+
+TEST_F(TriangleTest, Returns1GivenDeltaTimeIs1Second) {
+  const auto start_time =
+      std::chrono::time_point<std::chrono::high_resolution_clock>(
+          std::chrono::milliseconds(1));
+  const auto current_time =
+      std::chrono::time_point<std::chrono::high_resolution_clock>(
+          std::chrono::milliseconds(1001));
+  EXPECT_FLOAT_EQ(vka::get_delta_time_per_second(start_time, current_time), 1);
+}
+
+TEST_F(TriangleTest, Returns1Of2GivenDeltaTimeIsHalfSecond) {
+  const auto start_time =
+      std::chrono::time_point<std::chrono::high_resolution_clock>(
+          std::chrono::milliseconds(1));
+  const auto current_time =
+      std::chrono::time_point<std::chrono::high_resolution_clock>(
+          std::chrono::milliseconds(501));
+  EXPECT_FLOAT_EQ(vka::get_delta_time_per_second(start_time, current_time),
+                  1 / 2.0f);
+}
+
 TEST_F(TriangleTest, CreatesInstanceWithoutThrowingException) {
   vk::ApplicationInfo application_info =
       vka::create_application_info("Test", {1, 2, 3});

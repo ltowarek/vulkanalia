@@ -22,7 +22,14 @@
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.hpp>
 
+#include <chrono>
+
 namespace vka {
+float get_delta_time_per_second(
+    const std::chrono::time_point<std::chrono::high_resolution_clock>
+        start_time,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>
+        current_time);
 struct Vertex {
   glm::vec2 position;
   glm::vec3 color;
