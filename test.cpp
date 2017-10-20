@@ -710,6 +710,10 @@ TEST_F(TriangleTest, CreatesRenderPassWithoutThrowingException) {
       vka::create_render_pass(device(), vk::Format::eB8G8R8A8Unorm));
 }
 
+TEST_F(TriangleTest, CreatesDescriptorSetLayoutWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_descriptor_set_layout(device()));
+}
+
 TEST_F(TriangleTest, CreatesGraphicsPipelineWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_graphics_pipeline(device(), render_pass(),
                                                 swapchain_extent()));

@@ -321,6 +321,19 @@ vk::UniqueRenderPass create_render_pass(const vk::Device &device,
 
   return device.createRenderPassUnique(info);
 }
+vk::UniqueDescriptorSetLayout
+create_descriptor_set_layout(const vk::Device &device) {
+  vk::DescriptorSetLayoutBinding binding;
+  binding.descriptorCount = 1;
+  binding.descriptorType = vk::DescriptorType::eUniformBuffer;
+  binding.stageFlags = vk::ShaderStageFlagBits::eVertex;
+
+  vk::DescriptorSetLayoutCreateInfo info;
+  info.bindingCount = 1;
+  info.pBindings = &binding;
+
+  return device.createDescriptorSetLayoutUnique(info);
+}
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
                          const vk::RenderPass &render_pass,

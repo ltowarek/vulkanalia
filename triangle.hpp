@@ -102,6 +102,8 @@ vk::UniqueShaderModule create_shader_module(const vk::Device &device,
 vk::UniquePipelineLayout create_pipeline_layout(const vk::Device &device);
 vk::UniqueRenderPass create_render_pass(const vk::Device &device,
                                         const vk::Format &surface_format);
+vk::UniqueDescriptorSetLayout
+create_descriptor_set_layout(const vk::Device &device);
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
                          const vk::RenderPass &render_pass,
