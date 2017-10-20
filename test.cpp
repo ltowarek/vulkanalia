@@ -163,6 +163,25 @@ protected:
     }
     return *staging_index_buffer_memory_;
   }
+  const vk::Buffer &uniform_buffer() {
+    if (!uniform_buffer_) {
+      const uint32_t size =
+          static_cast<uint32_t>(sizeof(vka::UniformBufferObject));
+      uniform_buffer_ = vka::create_buffer(
+          device(), size, vk::BufferUsageFlagBits::eUniformBuffer);
+    }
+    return *uniform_buffer_;
+  }
+  const vk::DeviceMemory &uniform_buffer_memory() {
+    if (!uniform_buffer_memory_) {
+      uniform_buffer_memory_ = vka::allocate_buffer_memory(
+          device(), uniform_buffer(), physical_device().getMemoryProperties(),
+          vk::MemoryPropertyFlagBits::eHostVisible |
+              vk::MemoryPropertyFlagBits::eHostCoherent);
+      device().bindBufferMemory(uniform_buffer(), *uniform_buffer_memory_, 0);
+    }
+    return *uniform_buffer_memory_;
+  }
   const vk::SurfaceKHR &surface() {
     if (!surface_) {
       surface_ = vk::UniqueSurfaceKHR(window_manager_.surface(instance()));
@@ -269,6 +288,9 @@ protected:
   }
   const std::vector<vka::Vertex> vertices() { return vertices_; }
   const std::vector<uint16_t> indices() { return indices_; }
+  const vka::UniformBufferObject uniform_buffer_object() {
+    return uniform_buffer_object_;
+  }
   void release() {
     for (auto &framebuffer : framebuffers_) {
       framebuffer.release();
@@ -287,6 +309,8 @@ protected:
 
     swapchain_.release();
 
+    uniform_buffer_.release();
+    uniform_buffer_memory_.release();
     index_buffer_.release();
     index_buffer_memory_.release();
     vertex_buffer_.release();
@@ -309,6 +333,7 @@ private:
       {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
       {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
   const std::vector<uint16_t> indices_ = {0, 1, 2, 2, 3, 0};
+  const vka::UniformBufferObject uniform_buffer_object_ = {};
   WindowManager window_manager_ = WindowManager();
   vk::PhysicalDevice physical_device_ = vk::PhysicalDevice();
   std::vector<vk::QueueFamilyProperties> queue_family_properties_ =
@@ -318,6 +343,8 @@ private:
   vk::UniqueSurfaceKHR surface_ = vk::UniqueSurfaceKHR();
   vk::UniqueDevice device_ = vk::UniqueDevice();
   vk::UniqueCommandPool command_pool_ = vk::UniqueCommandPool();
+  vk::UniqueDeviceMemory uniform_buffer_memory_ = vk::UniqueDeviceMemory();
+  vk::UniqueBuffer uniform_buffer_ = vk::UniqueBuffer();
   vk::UniqueDeviceMemory staging_vertex_buffer_memory_ =
       vk::UniqueDeviceMemory();
   vk::UniqueBuffer staging_vertex_buffer_ = vk::UniqueBuffer();
@@ -497,6 +524,11 @@ TEST_F(TriangleTest, FillsStagingVertexBufferWithoutThrowingException) {
 TEST_F(TriangleTest, FillsStagingIndexBufferWithoutThrowingException) {
   EXPECT_NO_THROW(vka::fill_index_buffer(
       device(), staging_index_buffer_memory(), indices()));
+}
+
+TEST_F(TriangleTest, FillsUniformBufferWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::fill_uniform_buffer(device(), uniform_buffer_memory(),
+                                           uniform_buffer_object()));
 }
 
 TEST_F(TriangleTest, CopiesBufferWithoutThrowingException) {

@@ -68,6 +68,9 @@ void fill_vertex_buffer(const vk::Device &device,
 void fill_index_buffer(const vk::Device &device,
                        const vk::DeviceMemory &buffer_memory,
                        const std::vector<uint16_t> &indices);
+void fill_uniform_buffer(const vk::Device &device,
+                         const vk::DeviceMemory &buffer_memory,
+                         const UniformBufferObject &uniform_buffer_object);
 void copy_buffer(const vk::Device &device, const vk::Buffer &source_buffer,
                  const vk::Buffer &destination_buffer, const uint32_t size,
                  const vk::CommandPool &command_pool,
