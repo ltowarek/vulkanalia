@@ -182,6 +182,18 @@ protected:
     }
     return *uniform_buffer_memory_;
   }
+  const vk::DescriptorPool &descriptor_pool() {
+    if (!descriptor_pool_) {
+      descriptor_pool_ = vka::create_descriptor_pool(device());
+    }
+    return *descriptor_pool_;
+  }
+  const vk::DescriptorSetLayout &descriptor_set_layout() {
+    if (!descriptor_set_layout_) {
+      descriptor_set_layout_ = vka::create_descriptor_set_layout(device());
+    }
+    return *descriptor_set_layout_;
+  }
   const vk::SurfaceKHR &surface() {
     if (!surface_) {
       surface_ = vk::UniqueSurfaceKHR(window_manager_.surface(instance()));
@@ -309,8 +321,6 @@ protected:
 
     swapchain_.release();
 
-    uniform_buffer_.release();
-    uniform_buffer_memory_.release();
     index_buffer_.release();
     index_buffer_memory_.release();
     vertex_buffer_.release();
@@ -319,6 +329,10 @@ protected:
     staging_index_buffer_memory_.release();
     staging_vertex_buffer_.release();
     staging_vertex_buffer_memory_.release();
+    uniform_buffer_.release();
+    uniform_buffer_memory_.release();
+    descriptor_set_layout_.release();
+    descriptor_pool_.release();
     command_pool_.release();
     device_.release();
     surface_.release();
@@ -343,6 +357,9 @@ private:
   vk::UniqueSurfaceKHR surface_ = vk::UniqueSurfaceKHR();
   vk::UniqueDevice device_ = vk::UniqueDevice();
   vk::UniqueCommandPool command_pool_ = vk::UniqueCommandPool();
+  vk::UniqueDescriptorPool descriptor_pool_ = vk::UniqueDescriptorPool();
+  vk::UniqueDescriptorSetLayout descriptor_set_layout_ =
+      vk::UniqueDescriptorSetLayout();
   vk::UniqueDeviceMemory uniform_buffer_memory_ = vk::UniqueDeviceMemory();
   vk::UniqueBuffer uniform_buffer_ = vk::UniqueBuffer();
   vk::UniqueDeviceMemory staging_vertex_buffer_memory_ =
@@ -772,6 +789,11 @@ TEST_F(TriangleTest, CreatesRenderPassWithoutThrowingException) {
 
 TEST_F(TriangleTest, CreatesDescriptorPoolWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_descriptor_pool(device()));
+}
+
+TEST_F(TriangleTest, CreatesDescriptorSetWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_descriptor_sets(device(), descriptor_pool(),
+                                              descriptor_set_layout()));
 }
 
 TEST_F(TriangleTest, CreatesDescriptorSetLayoutWithoutThrowingException) {

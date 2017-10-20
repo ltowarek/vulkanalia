@@ -116,6 +116,10 @@ vk::UniqueRenderPass create_render_pass(const vk::Device &device,
 vk::UniqueDescriptorPool create_descriptor_pool(const vk::Device &device);
 vk::UniqueDescriptorSetLayout
 create_descriptor_set_layout(const vk::Device &device);
+std::vector<vk::UniqueDescriptorSet>
+create_descriptor_sets(const vk::Device &device,
+                       const vk::DescriptorPool &descriptor_pool,
+                       const vk::DescriptorSetLayout &descriptor_set_layout);
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
                          const vk::RenderPass &render_pass,

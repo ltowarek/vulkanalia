@@ -350,6 +350,7 @@ vk::UniqueDescriptorPool create_descriptor_pool(const vk::Device &device) {
   info.poolSizeCount = 1;
   info.pPoolSizes = &size;
   info.maxSets = 1;
+  info.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 
   return device.createDescriptorPoolUnique(info);
 }
@@ -365,6 +366,17 @@ create_descriptor_set_layout(const vk::Device &device) {
   info.pBindings = &binding;
 
   return device.createDescriptorSetLayoutUnique(info);
+}
+std::vector<vk::UniqueDescriptorSet>
+create_descriptor_sets(const vk::Device &device,
+                       const vk::DescriptorPool &descriptor_pool,
+                       const vk::DescriptorSetLayout &descriptor_set_layout) {
+  std::vector<vk::DescriptorSetLayout> layouts = {descriptor_set_layout};
+  vk::DescriptorSetAllocateInfo info;
+  info.descriptorPool = descriptor_pool;
+  info.descriptorSetCount = 1;
+  info.pSetLayouts = layouts.data();
+  return device.allocateDescriptorSetsUnique(info);
 }
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
