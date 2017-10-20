@@ -27,6 +27,11 @@ struct Vertex {
   glm::vec2 position;
   glm::vec3 color;
 };
+struct UniformBufferObject {
+  glm::mat4 model;
+  glm::mat4 view;
+  glm::mat4 projection;
+};
 vk::VertexInputBindingDescription get_binding_description();
 std::vector<vk::VertexInputAttributeDescription> get_attribute_descriptions();
 struct Version {
