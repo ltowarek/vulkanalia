@@ -158,33 +158,23 @@ vk::UniqueDeviceMemory allocate_buffer_memory(
                                           buffer_memory_properties);
   return device.allocateMemoryUnique(info);
 }
-void fill_vertex_buffer(const vk::Device &device,
-                        const vk::DeviceMemory &buffer_memory,
-                        const std::vector<vka::Vertex> &vertices) {
-  const uint32_t size =
-      static_cast<uint32_t>(sizeof(vertices[0]) * vertices.size());
+template <typename T>
+void fill_buffer(const vk::Device &device,
+                 const vk::DeviceMemory &buffer_memory, const T &data) {
+  const size_t size = sizeof(T);
   void *pointer;
   device.mapMemory(buffer_memory, 0, size, vk::MemoryMapFlags(), &pointer);
-  std::memcpy(pointer, vertices.data(), size);
+  std::memcpy(pointer, &data, size);
   device.unmapMemory(buffer_memory);
 }
-void fill_index_buffer(const vk::Device &device,
-                       const vk::DeviceMemory &buffer_memory,
-                       const std::vector<uint16_t> &indices) {
-  const uint32_t size =
-      static_cast<uint32_t>(sizeof(indices[0]) * indices.size());
+template <typename T>
+void fill_buffer(const vk::Device &device,
+                 const vk::DeviceMemory &buffer_memory,
+                 const std::vector<T> &data) {
+  const size_t size = sizeof(T) * data.size();
   void *pointer;
   device.mapMemory(buffer_memory, 0, size, vk::MemoryMapFlags(), &pointer);
-  std::memcpy(pointer, indices.data(), size);
-  device.unmapMemory(buffer_memory);
-}
-void fill_uniform_buffer(const vk::Device &device,
-                         const vk::DeviceMemory &buffer_memory,
-                         const UniformBufferObject &uniform_buffer_object) {
-  const uint32_t size = static_cast<uint32_t>(sizeof(uniform_buffer_object));
-  void *pointer;
-  device.mapMemory(buffer_memory, 0, size, vk::MemoryMapFlags(), &pointer);
-  std::memcpy(pointer, &uniform_buffer_object, size);
+  std::memcpy(pointer, data.data(), size);
   device.unmapMemory(buffer_memory);
 }
 void copy_buffer(const vk::Device &device, const vk::Buffer &source_buffer,
@@ -676,7 +666,8 @@ void VulkanController::create_uniform_buffer() {
 
   (*device_).bindBufferMemory(*uniform_buffer_, *uniform_buffer_memory_, 0);
 
-  vka::fill_uniform_buffer(*device_, *uniform_buffer_memory_, {});
+  vka::fill_buffer(*device_, *uniform_buffer_memory_,
+                   vka::UniformBufferObject());
 }
 void VulkanController::update_uniform_buffer(const float delta_time) {
   vka::UniformBufferObject ubo;
@@ -690,7 +681,7 @@ void VulkanController::update_uniform_buffer(const float delta_time) {
       swapchain_extent_.width / static_cast<float>(swapchain_extent_.height),
       0.1f, 10.0f);
   ubo.projection[1][1] *= -1;
-  vka::fill_uniform_buffer(*device_, *uniform_buffer_memory_, ubo);
+  vka::fill_buffer(*device_, *uniform_buffer_memory_, ubo);
 }
 void VulkanController::create_vertex_buffer() {
   const uint32_t vertices_size =
@@ -717,7 +708,7 @@ void VulkanController::create_vertex_buffer() {
 
   (*device_).bindBufferMemory(*staging_buffer, *staging_buffer_memory, 0);
 
-  vka::fill_vertex_buffer(*device_, *staging_buffer_memory, vertices_);
+  vka::fill_buffer(*device_, *staging_buffer_memory, vertices_);
 
   vka::copy_buffer(*device_, *staging_buffer, *vertex_buffer_, vertices_size,
                    *command_pool_, queue_index_);
@@ -746,7 +737,7 @@ void VulkanController::create_index_buffer() {
 
   (*device_).bindBufferMemory(*staging_buffer, *staging_buffer_memory, 0);
 
-  vka::fill_index_buffer(*device_, *staging_buffer_memory, indices_);
+  vka::fill_buffer(*device_, *staging_buffer_memory, indices_);
 
   vka::copy_buffer(*device_, *staging_buffer, *index_buffer_, indices_size,
                    *command_pool_, queue_index_);

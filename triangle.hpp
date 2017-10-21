@@ -78,15 +78,13 @@ vk::UniqueDeviceMemory allocate_buffer_memory(
     const vk::Device &device, const vk::Buffer &buffer,
     const vk::PhysicalDeviceMemoryProperties &physical_device_memory_properties,
     const vk::MemoryPropertyFlags &buffer_memory_properties);
-void fill_vertex_buffer(const vk::Device &device,
-                        const vk::DeviceMemory &buffer_memory,
-                        const std::vector<vka::Vertex> &vertices);
-void fill_index_buffer(const vk::Device &device,
-                       const vk::DeviceMemory &buffer_memory,
-                       const std::vector<uint16_t> &indices);
-void fill_uniform_buffer(const vk::Device &device,
-                         const vk::DeviceMemory &buffer_memory,
-                         const UniformBufferObject &uniform_buffer_object);
+template <typename T>
+void fill_buffer(const vk::Device &device,
+                 const vk::DeviceMemory &buffer_memory, const T &data);
+template <typename T>
+void fill_buffer(const vk::Device &device,
+                 const vk::DeviceMemory &buffer_memory,
+                 const std::vector<T> &data);
 void copy_buffer(const vk::Device &device, const vk::Buffer &source_buffer,
                  const vk::Buffer &destination_buffer, const uint32_t size,
                  const vk::CommandPool &command_pool,

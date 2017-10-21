@@ -609,26 +609,21 @@ TEST_F(TriangleTest, AllocatesMemoryForStagingBufferWithoutThrowingException) {
           vk::MemoryPropertyFlagBits::eHostCoherent));
 }
 
-TEST_F(TriangleTest, FillsStagingVertexBufferWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::fill_vertex_buffer(
-      device(), staging_vertex_buffer_memory(), vertices()));
+TEST_F(TriangleTest, FillsBufferWithVectorWithoutThrowingException) {
+  EXPECT_NO_THROW(
+      vka::fill_buffer(device(), staging_vertex_buffer_memory(), vertices()));
 }
 
-TEST_F(TriangleTest, FillsStagingIndexBufferWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::fill_index_buffer(
-      device(), staging_index_buffer_memory(), indices()));
-}
-
-TEST_F(TriangleTest, FillsUniformBufferWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::fill_uniform_buffer(device(), uniform_buffer_memory(),
-                                           uniform_buffer_object()));
+TEST_F(TriangleTest, FillsBufferWithObjectWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::fill_buffer(device(), uniform_buffer_memory(),
+                                   uniform_buffer_object()));
 }
 
 TEST_F(TriangleTest, CopiesBufferWithoutThrowingException) {
   vertex_buffer_memory();
   const uint32_t size =
       static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
-  vka::fill_vertex_buffer(device(), staging_vertex_buffer_memory(), vertices());
+  vka::fill_buffer(device(), staging_vertex_buffer_memory(), vertices());
   EXPECT_NO_THROW(vka::copy_buffer(device(), staging_vertex_buffer(),
                                    vertex_buffer(), size, command_pool(),
                                    queue_index()));
@@ -880,13 +875,13 @@ TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
   vertex_buffer_memory();
   const uint32_t vertices_size =
       static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
-  vka::fill_vertex_buffer(device(), staging_vertex_buffer_memory(), vertices());
+  vka::fill_buffer(device(), staging_vertex_buffer_memory(), vertices());
   vka::copy_buffer(device(), staging_vertex_buffer(), vertex_buffer(),
                    vertices_size, command_pool(), queue_index());
   index_buffer_memory();
   const uint32_t indices_size =
       static_cast<uint32_t>(sizeof(indices()[0]) * indices().size());
-  vka::fill_index_buffer(device(), staging_index_buffer_memory(), indices());
+  vka::fill_buffer(device(), staging_index_buffer_memory(), indices());
   vka::copy_buffer(device(), staging_index_buffer(), index_buffer(),
                    indices_size, command_pool(), queue_index());
   std::vector<vk::UniqueCommandBuffer> command_buffers =
