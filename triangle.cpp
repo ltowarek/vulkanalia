@@ -590,6 +590,21 @@ void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
   queue.presentKHR(present_info);
   queue.waitIdle();
 }
+vk::UniqueImage create_image(const vk::Device &device, const uint32_t width,
+                             const uint32_t height, const vk::Format format,
+                             const vk::ImageTiling tiling,
+                             const vk::ImageUsageFlags usage,
+                             vk::MemoryPropertyFlags properties) {
+  vk::ImageCreateInfo info;
+  info.imageType = vk::ImageType::e2D;
+  info.extent = vk::Extent3D(width, height, 1);
+  info.mipLevels = 1;
+  info.arrayLayers = 1;
+  info.format = format;
+  info.tiling = tiling;
+  info.usage = usage;
+  return device.createImageUnique(info);
+}
 VulkanController::VulkanController()
     : vertices_({{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
                  {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},

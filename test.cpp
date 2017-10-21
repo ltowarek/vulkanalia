@@ -900,3 +900,10 @@ TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
   EXPECT_NO_THROW(vka::draw_frame(device(), swapchain(),
                                   command_buffer_pointers, queue_index()));
 }
+
+TEST_F(TriangleTest, CreatesImageWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_image(
+      device(), 32, 64, vk::Format::eR8G8B8A8Unorm, vk::ImageTiling::eOptimal,
+      vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+      vk::MemoryPropertyFlagBits::eDeviceLocal));
+}

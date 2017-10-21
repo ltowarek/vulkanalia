@@ -153,6 +153,11 @@ void record_command_buffers(
 void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
                 const std::vector<vk::CommandBuffer> &command_buffers,
                 const uint32_t queue_index);
+vk::UniqueImage create_image(const vk::Device &device, const uint32_t width,
+                             const uint32_t height, const vk::Format format,
+                             const vk::ImageTiling tiling,
+                             const vk::ImageUsageFlags usage,
+                             vk::MemoryPropertyFlags properties);
 class VulkanController {
 public:
   VulkanController();
