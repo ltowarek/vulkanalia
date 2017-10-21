@@ -593,8 +593,7 @@ void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
 vk::UniqueImage create_image(const vk::Device &device, const uint32_t width,
                              const uint32_t height, const vk::Format format,
                              const vk::ImageTiling tiling,
-                             const vk::ImageUsageFlags usage,
-                             vk::MemoryPropertyFlags properties) {
+                             const vk::ImageUsageFlags usage) {
   vk::ImageCreateInfo info;
   info.imageType = vk::ImageType::e2D;
   info.extent = vk::Extent3D(width, height, 1);
@@ -604,6 +603,19 @@ vk::UniqueImage create_image(const vk::Device &device, const uint32_t width,
   info.tiling = tiling;
   info.usage = usage;
   return device.createImageUnique(info);
+}
+vk::UniqueDeviceMemory allocate_image_memory(
+    const vk::Device &device, const vk::Image &image,
+    const vk::PhysicalDeviceMemoryProperties &physical_device_memory_properties,
+    const vk::MemoryPropertyFlags &image_memory_properties) {
+  vk::MemoryRequirements memory_requirements =
+      device.getImageMemoryRequirements(image);
+  vk::MemoryAllocateInfo info;
+  info.allocationSize = memory_requirements.size;
+  info.memoryTypeIndex = find_memory_type(physical_device_memory_properties,
+                                          memory_requirements.memoryTypeBits,
+                                          image_memory_properties);
+  return device.allocateMemoryUnique(info);
 }
 VulkanController::VulkanController()
     : vertices_({{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},

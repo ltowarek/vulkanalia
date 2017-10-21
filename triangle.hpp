@@ -156,8 +156,11 @@ void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
 vk::UniqueImage create_image(const vk::Device &device, const uint32_t width,
                              const uint32_t height, const vk::Format format,
                              const vk::ImageTiling tiling,
-                             const vk::ImageUsageFlags usage,
-                             vk::MemoryPropertyFlags properties);
+                             const vk::ImageUsageFlags usage);
+vk::UniqueDeviceMemory allocate_image_memory(
+    const vk::Device &device, const vk::Image &image,
+    const vk::PhysicalDeviceMemoryProperties &physical_device_memory_properties,
+    const vk::MemoryPropertyFlags &image_memory_properties);
 class VulkanController {
 public:
   VulkanController();

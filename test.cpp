@@ -316,6 +316,16 @@ protected:
     }
     return command_buffers;
   }
+  const vk::Image &texture_image() {
+    if (!texture_image_) {
+      texture_image_ =
+          vka::create_image(device(), 32, 64, vk::Format::eR8G8B8A8Unorm,
+                            vk::ImageTiling::eOptimal,
+                            vk::ImageUsageFlagBits::eTransferDst |
+                                vk::ImageUsageFlagBits::eSampled);
+    }
+    return *texture_image_;
+  }
   const std::vector<vka::Vertex> vertices() { return vertices_; }
   const std::vector<uint16_t> indices() { return indices_; }
   const vka::UniformBufferObject uniform_buffer_object() {
@@ -340,6 +350,7 @@ protected:
 
     swapchain_.release();
 
+    texture_image_.release();
     index_buffer_.release();
     index_buffer_memory_.release();
     vertex_buffer_.release();
@@ -406,6 +417,7 @@ private:
       std::vector<vk::UniqueCommandBuffer>();
   std::vector<vk::UniqueFramebuffer> framebuffers_ =
       std::vector<vk::UniqueFramebuffer>();
+  vk::UniqueImage texture_image_ = vk::UniqueImage();
 };
 
 vk::UniqueInstance TriangleTest::instance_ = vk::UniqueInstance();
@@ -904,6 +916,11 @@ TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
 TEST_F(TriangleTest, CreatesImageWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_image(
       device(), 32, 64, vk::Format::eR8G8B8A8Unorm, vk::ImageTiling::eOptimal,
-      vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+      vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled));
+}
+
+TEST_F(TriangleTest, AllocatesMemoryForImageWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::allocate_image_memory(
+      device(), texture_image(), physical_device().getMemoryProperties(),
       vk::MemoryPropertyFlagBits::eDeviceLocal));
 }
