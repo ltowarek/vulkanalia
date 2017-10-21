@@ -935,3 +935,10 @@ TEST_F(TriangleTest, AllocatesMemoryForImageWithoutThrowingException) {
       device(), texture_image(), physical_device().getMemoryProperties(),
       vk::MemoryPropertyFlagBits::eDeviceLocal));
 }
+
+TEST_F(TriangleTest, TransitionsImageLayoutWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::transition_image_layout(
+                      device(), command_pool(), queue_index(),
+                      vk::ImageLayout::eUndefined,
+                      vk::ImageLayout::eTransferDstOptimal, texture_image()););
+}

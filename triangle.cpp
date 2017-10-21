@@ -630,6 +630,62 @@ vk::UniqueDeviceMemory allocate_image_memory(
                                           image_memory_properties);
   return device.allocateMemoryUnique(info);
 }
+struct TransitionProperties {
+  vk::AccessFlags source_mask;
+  vk::AccessFlags destination_mask;
+  vk::PipelineStageFlags source_stage;
+  vk::PipelineStageFlags destination_stage;
+};
+TransitionProperties
+get_transition_properties(const vk::ImageLayout old_layout,
+                          const vk::ImageLayout new_layout) {
+  TransitionProperties properties;
+  if (old_layout == vk::ImageLayout::eUndefined &&
+      new_layout == vk::ImageLayout::eTransferDstOptimal) {
+    properties.source_mask = vk::AccessFlags();
+    properties.destination_mask = vk::AccessFlagBits::eTransferWrite;
+    properties.source_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+    properties.destination_stage = vk::PipelineStageFlagBits::eTransfer;
+  } else if (old_layout == vk::ImageLayout::eTransferDstOptimal &&
+             new_layout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+    properties.source_mask = vk::AccessFlagBits::eTransferWrite;
+    properties.destination_mask = vk::AccessFlagBits::eShaderRead;
+    properties.source_stage = vk::PipelineStageFlagBits::eTransfer;
+    properties.destination_stage = vk::PipelineStageFlagBits::eFragmentShader;
+  }
+  return properties;
+}
+void transition_image_layout(const vk::Device &device,
+                             const vk::CommandPool &command_pool,
+                             const uint32_t queue_index,
+                             const vk::ImageLayout old_layout,
+                             const vk::ImageLayout new_layout,
+                             const vk::Image &image) {
+  vk::UniqueCommandBuffer command_buffer = begin_command(device, command_pool);
+
+  vk::ImageMemoryBarrier barrier;
+  barrier.oldLayout = old_layout;
+  barrier.newLayout = new_layout;
+  barrier.image = image;
+  vk::ImageSubresourceRange subresource;
+  subresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+  subresource.levelCount = 1;
+  subresource.layerCount = 1;
+  barrier.subresourceRange = subresource;
+
+  const TransitionProperties transition_properties =
+      get_transition_properties(old_layout, new_layout);
+
+  barrier.srcAccessMask = transition_properties.source_mask;
+  barrier.dstAccessMask = transition_properties.destination_mask;
+
+  (*command_buffer)
+      .pipelineBarrier(transition_properties.source_stage,
+                       transition_properties.destination_stage,
+                       vk::DependencyFlags(), {}, {}, {barrier});
+
+  end_command(device, std::move(command_buffer), queue_index);
+}
 VulkanController::VulkanController()
     : vertices_({{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
                  {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},

@@ -168,6 +168,12 @@ vk::UniqueDeviceMemory allocate_image_memory(
     const vk::Device &device, const vk::Image &image,
     const vk::PhysicalDeviceMemoryProperties &physical_device_memory_properties,
     const vk::MemoryPropertyFlags &image_memory_properties);
+void transition_image_layout(const vk::Device &device,
+                             const vk::CommandPool &command_pool,
+                             const uint32_t queue_index,
+                             const vk::ImageLayout old_layout,
+                             const vk::ImageLayout new_layout,
+                             const vk::Image &image);
 class VulkanController {
 public:
   VulkanController();
