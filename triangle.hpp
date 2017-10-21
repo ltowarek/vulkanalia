@@ -26,6 +26,14 @@
 #include <chrono>
 
 namespace vka {
+struct Texture {
+  uint32_t width;
+  uint32_t height;
+  uint64_t size;
+  uint8_t *data;
+  Texture(const std::string &file_name);
+  ~Texture();
+};
 float get_delta_time_per_second(
     const std::chrono::time_point<std::chrono::high_resolution_clock>
         start_time,

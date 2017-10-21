@@ -410,6 +410,29 @@ private:
 
 vk::UniqueInstance TriangleTest::instance_ = vk::UniqueInstance();
 
+TEST_F(TriangleTest, SetsWidthOfTheLoadedTexture) {
+  EXPECT_EQ(vka::Texture("texture.jpg").width, 512);
+}
+
+TEST_F(TriangleTest, SetsHeightOfTheLoadedTexture) {
+  EXPECT_EQ(vka::Texture("texture.jpg").height, 512);
+}
+
+TEST_F(TriangleTest, SetsSizeOfTheLoadedTexture) {
+  const uint32_t width = 512;
+  const uint32_t height = 512;
+  const uint32_t bytes_per_pixel = 4;
+  EXPECT_EQ(vka::Texture("texture.jpg").size, width * height * bytes_per_pixel);
+}
+
+TEST_F(TriangleTest, SetsDataOfTheLoadedTexture) {
+  EXPECT_NE(vka::Texture("texture.jpg").data, nullptr);
+}
+
+TEST_F(TriangleTest, SetsNullptrGivenTextureNotExit) {
+  EXPECT_EQ(vka::Texture("").data, nullptr);
+}
+
 TEST_F(TriangleTest, Returns0GivenDeltaTimeIs0) {
   const auto time_value =
       std::chrono::time_point<std::chrono::high_resolution_clock>(

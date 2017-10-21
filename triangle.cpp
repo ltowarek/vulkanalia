@@ -22,6 +22,15 @@
 #include <stb_image.h>
 
 namespace vka {
+Texture::Texture(const std::string &file_name) {
+  int tmp_width, tmp_height, tmp_channels;
+  data = stbi_load(file_name.c_str(), &tmp_width, &tmp_height, &tmp_channels,
+                   STBI_rgb_alpha);
+  width = static_cast<uint32_t>(tmp_width);
+  height = static_cast<uint32_t>(tmp_height);
+  size = width * height * STBI_rgb_alpha;
+}
+Texture::~Texture() { stbi_image_free(data); }
 float get_delta_time_per_second(
     const std::chrono::time_point<std::chrono::high_resolution_clock>
         start_time,
