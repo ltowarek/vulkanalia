@@ -631,14 +631,14 @@ TEST_F(TriangleTest, FillsBufferWithObjectWithoutThrowingException) {
                                    uniform_buffer_object()));
 }
 
-TEST_F(TriangleTest, CopiesBufferWithoutThrowingException) {
+TEST_F(TriangleTest, CopiesBufferToBufferWithoutThrowingException) {
   vertex_buffer_memory();
   const uint32_t size =
       static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
   vka::fill_buffer(device(), staging_vertex_buffer_memory(), vertices());
-  EXPECT_NO_THROW(vka::copy_buffer(device(), staging_vertex_buffer(),
-                                   vertex_buffer(), size, command_pool(),
-                                   queue_index()));
+  EXPECT_NO_THROW(vka::copy_buffer_to_buffer(device(), staging_vertex_buffer(),
+                                             vertex_buffer(), size,
+                                             command_pool(), queue_index()));
 }
 
 TEST_F(TriangleTest, CreatesCommandBuffersWithoutThrowingException) {
@@ -888,14 +888,14 @@ TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
   const uint32_t vertices_size =
       static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
   vka::fill_buffer(device(), staging_vertex_buffer_memory(), vertices());
-  vka::copy_buffer(device(), staging_vertex_buffer(), vertex_buffer(),
-                   vertices_size, command_pool(), queue_index());
+  vka::copy_buffer_to_buffer(device(), staging_vertex_buffer(), vertex_buffer(),
+                             vertices_size, command_pool(), queue_index());
   index_buffer_memory();
   const uint32_t indices_size =
       static_cast<uint32_t>(sizeof(indices()[0]) * indices().size());
   vka::fill_buffer(device(), staging_index_buffer_memory(), indices());
-  vka::copy_buffer(device(), staging_index_buffer(), index_buffer(),
-                   indices_size, command_pool(), queue_index());
+  vka::copy_buffer_to_buffer(device(), staging_index_buffer(), index_buffer(),
+                             indices_size, command_pool(), queue_index());
   std::vector<vk::UniqueCommandBuffer> command_buffers =
       vka::create_command_buffers(device(), command_pool(),
                                   static_cast<uint32_t>(framebuffers().size()));

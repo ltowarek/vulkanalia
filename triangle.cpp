@@ -177,10 +177,12 @@ void fill_buffer(const vk::Device &device,
   std::memcpy(pointer, data.data(), size);
   device.unmapMemory(buffer_memory);
 }
-void copy_buffer(const vk::Device &device, const vk::Buffer &source_buffer,
-                 const vk::Buffer &destination_buffer, const uint32_t size,
-                 const vk::CommandPool &command_pool,
-                 const uint32_t queue_index) {
+void copy_buffer_to_buffer(const vk::Device &device,
+                           const vk::Buffer &source_buffer,
+                           const vk::Buffer &destination_buffer,
+                           const uint32_t size,
+                           const vk::CommandPool &command_pool,
+                           const uint32_t queue_index) {
   const std::vector<vk::UniqueCommandBuffer> command_buffers =
       create_command_buffers(device, command_pool, 1);
   const vk::CommandBuffer command_buffer = *command_buffers[0];
@@ -737,8 +739,8 @@ void VulkanController::create_vertex_buffer() {
 
   vka::fill_buffer(*device_, *staging_buffer_memory, vertices_);
 
-  vka::copy_buffer(*device_, *staging_buffer, *vertex_buffer_, vertices_size,
-                   *command_pool_, queue_index_);
+  vka::copy_buffer_to_buffer(*device_, *staging_buffer, *vertex_buffer_,
+                             vertices_size, *command_pool_, queue_index_);
 }
 void VulkanController::create_index_buffer() {
   const uint32_t indices_size =
@@ -766,8 +768,8 @@ void VulkanController::create_index_buffer() {
 
   vka::fill_buffer(*device_, *staging_buffer_memory, indices_);
 
-  vka::copy_buffer(*device_, *staging_buffer, *index_buffer_, indices_size,
-                   *command_pool_, queue_index_);
+  vka::copy_buffer_to_buffer(*device_, *staging_buffer, *index_buffer_,
+                             indices_size, *command_pool_, queue_index_);
 }
 void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
   swapchain_extent_ = swapchain_extent;
