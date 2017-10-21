@@ -52,11 +52,21 @@ add_subdirectory("${CMAKE_BINARY_DIR}/external/glm-src"
                  "${CMAKE_BINARY_DIR}/external/glm-build")
 add_library(GLM::GLM ALIAS glm)
 
+configure_file(cmake/stb.cmake.in ${CMAKE_BINARY_DIR}/download/stb/CMakeLists.txt)
+execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" . 
+                WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/download/stb")
+execute_process(COMMAND "${CMAKE_COMMAND}" --build . 
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/download/stb")
+
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE "${CMAKE_BINARY_DIR}/external/stb-src")
+add_library(STB::STB ALIAS stb)
+
 find_package(Vulkan REQUIRED)
 
 add_library(triangle triangle.hpp triangle.cpp)
 add_library(vka::triangle ALIAS triangle)
-target_link_libraries(triangle GLFW::GLFW Vulkan::Vulkan GLM::GLM)
+target_link_libraries(triangle GLFW::GLFW Vulkan::Vulkan GLM::GLM STB::STB)
 
 add_executable(vulkanalia main.cpp)
 target_link_libraries(vulkanalia vka::triangle)
