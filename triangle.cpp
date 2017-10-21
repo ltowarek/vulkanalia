@@ -177,32 +177,43 @@ void fill_buffer(const vk::Device &device,
   std::memcpy(pointer, data.data(), size);
   device.unmapMemory(buffer_memory);
 }
+vk::UniqueCommandBuffer begin_command(const vk::Device &device,
+                                      const vk::CommandPool &command_pool) {
+  std::vector<vk::UniqueCommandBuffer> command_buffers =
+      create_command_buffers(device, command_pool, 1);
+  vk::UniqueCommandBuffer command_buffer = std::move(command_buffers[0]);
+
+  vk::CommandBufferBeginInfo command_buffer_begin_info;
+  command_buffer_begin_info.flags =
+      vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+  (*command_buffer).begin(command_buffer_begin_info);
+  return std::move(command_buffer);
+}
+void end_command(const vk::Device &device,
+                 vk::UniqueCommandBuffer command_buffer,
+                 const uint32_t queue_index) {
+  (*command_buffer).end();
+  vk::SubmitInfo submit_info;
+  submit_info.commandBufferCount = 1;
+  submit_info.pCommandBuffers = &(*command_buffer);
+
+  vk::Queue queue = device.getQueue(queue_index, 0);
+  queue.submit(submit_info, vk::Fence());
+  queue.waitIdle();
+}
 void copy_buffer_to_buffer(const vk::Device &device,
                            const vk::Buffer &source_buffer,
                            const vk::Buffer &destination_buffer,
                            const uint32_t size,
                            const vk::CommandPool &command_pool,
                            const uint32_t queue_index) {
-  const std::vector<vk::UniqueCommandBuffer> command_buffers =
-      create_command_buffers(device, command_pool, 1);
-  const vk::CommandBuffer command_buffer = *command_buffers[0];
+  vk::UniqueCommandBuffer command_buffer = begin_command(device, command_pool);
 
-  vk::CommandBufferBeginInfo command_buffer_begin_info;
-  command_buffer_begin_info.flags =
-      vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
-
-  command_buffer.begin(command_buffer_begin_info);
   const vk::BufferCopy region(0, 0, size);
-  command_buffer.copyBuffer(source_buffer, destination_buffer, 1, &region);
-  command_buffer.end();
+  (*command_buffer).copyBuffer(source_buffer, destination_buffer, 1, &region);
 
-  vk::SubmitInfo submit_info;
-  submit_info.commandBufferCount = 1;
-  submit_info.pCommandBuffers = &command_buffer;
-
-  vk::Queue queue = device.getQueue(queue_index, 0);
-  queue.submit(submit_info, vk::Fence());
-  queue.waitIdle();
+  end_command(device, std::move(command_buffer), queue_index);
 }
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,

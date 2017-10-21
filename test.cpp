@@ -631,6 +631,17 @@ TEST_F(TriangleTest, FillsBufferWithObjectWithoutThrowingException) {
                                    uniform_buffer_object()));
 }
 
+TEST_F(TriangleTest, BeginsCommandWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::begin_command(device(), command_pool()));
+}
+
+TEST_F(TriangleTest, EndsCommandWithoutThrowingException) {
+  vk::UniqueCommandBuffer command_buffer =
+      vka::begin_command(device(), command_pool());
+  EXPECT_NO_THROW(
+      vka::end_command(device(), std::move(command_buffer), queue_index()));
+}
+
 TEST_F(TriangleTest, CopiesBufferToBufferWithoutThrowingException) {
   vertex_buffer_memory();
   const uint32_t size =

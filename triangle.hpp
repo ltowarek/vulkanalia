@@ -85,6 +85,11 @@ template <typename T>
 void fill_buffer(const vk::Device &device,
                  const vk::DeviceMemory &buffer_memory,
                  const std::vector<T> &data);
+vk::UniqueCommandBuffer begin_command(const vk::Device &device,
+                                      const vk::CommandPool &command_pool);
+void end_command(const vk::Device &device,
+                 vk::UniqueCommandBuffer command_buffer,
+                 const uint32_t queue_index);
 void copy_buffer_to_buffer(const vk::Device &device,
                            const vk::Buffer &source_buffer,
                            const vk::Buffer &destination_buffer,
