@@ -149,7 +149,8 @@ create_descriptor_sets(const vk::Device &device,
 void update_descriptor_sets(
     const vk::Device &device,
     const std::vector<vk::DescriptorSet> &descriptor_sets,
-    const vk::Buffer &uniform_buffer);
+    const vk::Buffer &uniform_buffer, const vk::ImageView &image_view,
+    const vk::Sampler &sampler);
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
                          const vk::RenderPass &render_pass,
@@ -205,6 +206,7 @@ private:
   void update_uniform_buffer(const float delta_time);
   void create_vertex_buffer();
   void create_index_buffer();
+  void create_texture_image();
   vk::PhysicalDevice physical_device_;
   uint32_t queue_index_;
   vk::SurfaceFormatKHR surface_format_;
@@ -217,6 +219,11 @@ private:
   vk::UniqueDescriptorPool descriptor_pool_;
   vk::UniqueDescriptorSetLayout descriptor_set_layout_;
   std::vector<vk::UniqueDescriptorSet> descriptor_sets_;
+  vk::UniqueSampler texture_sampler_;
+  Texture texture_;
+  vk::UniqueImageView texture_image_view_;
+  vk::UniqueImage texture_image_;
+  vk::UniqueDeviceMemory texture_image_memory_;
   vk::UniqueBuffer uniform_buffer_;
   vk::UniqueDeviceMemory uniform_buffer_memory_;
   vk::UniqueBuffer vertex_buffer_;

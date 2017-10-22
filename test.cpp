@@ -335,6 +335,19 @@ protected:
     }
     return *texture_image_memory_;
   }
+  const vk::ImageView &texture_image_view() {
+    if (!texture_image_view_) {
+      texture_image_view_ =
+          vka::create_texture_image_view(device(), texture_image());
+    }
+    return *texture_image_view_;
+  }
+  const vk::Sampler &texture_sampler() {
+    if (!texture_sampler_) {
+      texture_sampler_ = vka::create_texture_sampler(device());
+    }
+    return *texture_sampler_;
+  }
   const vk::Buffer &staging_texture_buffer() {
     if (!staging_texture_buffer_) {
       const uint32_t size = static_cast<uint32_t>(texture().size);
@@ -387,6 +400,8 @@ protected:
 
     staging_texture_buffer_.release();
     staging_texture_buffer_memory_.release();
+    texture_sampler_.release();
+    texture_image_view_.release();
     texture_image_.release();
     texture_image_memory_.release();
     index_buffer_.release();
@@ -456,6 +471,8 @@ private:
       std::vector<vk::UniqueCommandBuffer>();
   std::vector<vk::UniqueFramebuffer> framebuffers_ =
       std::vector<vk::UniqueFramebuffer>();
+  vk::UniqueSampler texture_sampler_ = vk::UniqueSampler();
+  vk::UniqueImageView texture_image_view_ = vk::UniqueImageView();
   vk::UniqueImage texture_image_ = vk::UniqueImage();
   vk::UniqueDeviceMemory texture_image_memory_ = vk::UniqueDeviceMemory();
   vk::UniqueDeviceMemory staging_texture_buffer_memory_ =
@@ -917,8 +934,10 @@ TEST_F(TriangleTest, CreatesDescriptorSetsWithoutThrowingException) {
 
 TEST_F(TriangleTest, UpdatesDescriptorSetsWithoutThrowingException) {
   uniform_buffer_memory();
-  EXPECT_NO_THROW(vka::update_descriptor_sets(device(), descriptor_sets(),
-                                              uniform_buffer()));
+  texture_image_memory();
+  EXPECT_NO_THROW(
+      vka::update_descriptor_sets(device(), descriptor_sets(), uniform_buffer(),
+                                  texture_image_view(), texture_sampler()));
 }
 
 TEST_F(TriangleTest, CreatesGraphicsPipelineWithoutThrowingException) {
@@ -935,7 +954,9 @@ TEST_F(TriangleTest, RecordsCommandBuffersWithoutThrowingException) {
   vertex_buffer_memory();
   index_buffer_memory();
   uniform_buffer_memory();
-  vka::update_descriptor_sets(device(), descriptor_sets(), uniform_buffer());
+  texture_image_memory();
+  vka::update_descriptor_sets(device(), descriptor_sets(), uniform_buffer(),
+                              texture_image_view(), texture_sampler());
   EXPECT_NO_THROW(vka::record_command_buffers(
       device(), command_buffers(), render_pass(), graphics_pipeline(),
       pipeline_layout(), framebuffers(), swapchain_extent(), vertex_buffer(),
@@ -963,7 +984,9 @@ TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
     command_buffer_pointers.push_back(*command_buffer);
   }
   uniform_buffer_memory();
-  vka::update_descriptor_sets(device(), descriptor_sets(), uniform_buffer());
+  texture_image_memory();
+  vka::update_descriptor_sets(device(), descriptor_sets(), uniform_buffer(),
+                              texture_image_view(), texture_sampler());
   vka::record_command_buffers(
       device(), command_buffer_pointers, render_pass(), graphics_pipeline(),
       pipeline_layout(), framebuffers(), swapchain_extent(), vertex_buffer(),

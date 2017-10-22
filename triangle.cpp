@@ -402,13 +402,15 @@ vk::UniqueRenderPass create_render_pass(const vk::Device &device,
   return device.createRenderPassUnique(info);
 }
 vk::UniqueDescriptorPool create_descriptor_pool(const vk::Device &device) {
-  vk::DescriptorPoolSize size;
-  size.type = vk::DescriptorType::eUniformBuffer;
-  size.descriptorCount = 1;
+  std::array<vk::DescriptorPoolSize, 2> pool_sizes;
+  pool_sizes[0].type = vk::DescriptorType::eUniformBuffer;
+  pool_sizes[0].descriptorCount = 1;
+  pool_sizes[1].type = vk::DescriptorType::eCombinedImageSampler;
+  pool_sizes[1].descriptorCount = 1;
 
   vk::DescriptorPoolCreateInfo info;
-  info.poolSizeCount = 1;
-  info.pPoolSizes = &size;
+  info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+  info.pPoolSizes = pool_sizes.data();
   info.maxSets = 1;
   info.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 
@@ -416,14 +418,20 @@ vk::UniqueDescriptorPool create_descriptor_pool(const vk::Device &device) {
 }
 vk::UniqueDescriptorSetLayout
 create_descriptor_set_layout(const vk::Device &device) {
-  vk::DescriptorSetLayoutBinding binding;
-  binding.descriptorCount = 1;
-  binding.descriptorType = vk::DescriptorType::eUniformBuffer;
-  binding.stageFlags = vk::ShaderStageFlagBits::eVertex;
+  std::array<vk::DescriptorSetLayoutBinding, 2> bindings;
+  bindings[0].binding = 0;
+  bindings[0].descriptorCount = 1;
+  bindings[0].descriptorType = vk::DescriptorType::eUniformBuffer;
+  bindings[0].stageFlags = vk::ShaderStageFlagBits::eVertex;
+
+  bindings[1].binding = 1;
+  bindings[1].descriptorCount = 1;
+  bindings[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+  bindings[1].stageFlags = vk::ShaderStageFlagBits::eFragment;
 
   vk::DescriptorSetLayoutCreateInfo info;
-  info.bindingCount = 1;
-  info.pBindings = &binding;
+  info.bindingCount = static_cast<uint32_t>(bindings.size());
+  info.pBindings = bindings.data();
 
   return device.createDescriptorSetLayoutUnique(info);
 }
@@ -441,18 +449,32 @@ create_descriptor_sets(const vk::Device &device,
 void update_descriptor_sets(
     const vk::Device &device,
     const std::vector<vk::DescriptorSet> &descriptor_sets,
-    const vk::Buffer &uniform_buffer) {
+    const vk::Buffer &uniform_buffer, const vk::ImageView &image_view,
+    const vk::Sampler &sampler) {
   vk::DescriptorBufferInfo buffer_info;
   buffer_info.buffer = uniform_buffer;
   buffer_info.range = sizeof(vka::UniformBufferObject);
 
-  vk::WriteDescriptorSet descriptor_write;
-  descriptor_write.dstSet = descriptor_sets[0];
-  descriptor_write.descriptorType = vk::DescriptorType::eUniformBuffer;
-  descriptor_write.descriptorCount = 1;
-  descriptor_write.pBufferInfo = &buffer_info;
+  vk::DescriptorImageInfo image_info;
+  image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+  image_info.imageView = image_view;
+  image_info.sampler = sampler;
 
-  device.updateDescriptorSets({descriptor_write}, {});
+  std::array<vk::WriteDescriptorSet, 2> descriptor_writes;
+  descriptor_writes[0].dstSet = descriptor_sets[0];
+  descriptor_writes[0].dstBinding = 0;
+  descriptor_writes[0].descriptorType = vk::DescriptorType::eUniformBuffer;
+  descriptor_writes[0].descriptorCount = 1;
+  descriptor_writes[0].pBufferInfo = &buffer_info;
+
+  descriptor_writes[1].dstSet = descriptor_sets[0];
+  descriptor_writes[1].dstBinding = 1;
+  descriptor_writes[1].descriptorType =
+      vk::DescriptorType::eCombinedImageSampler;
+  descriptor_writes[1].descriptorCount = 1;
+  descriptor_writes[1].pImageInfo = &image_info;
+
+  device.updateDescriptorSets(descriptor_writes, {});
 }
 vk::UniquePipeline
 create_graphics_pipeline(const vk::Device &device,
@@ -787,11 +809,14 @@ void VulkanController::initialize(vk::UniqueInstance instance,
   create_uniform_buffer();
   create_vertex_buffer();
   create_index_buffer();
+  create_texture_image();
+
+  texture_ = vka::Texture("texture.jpg");
+
+  texture_sampler_ = vka::create_texture_sampler(*device_);
 
   descriptor_pool_ = vka::create_descriptor_pool(*device_);
-
   descriptor_set_layout_ = vka::create_descriptor_set_layout(*device_);
-
   descriptor_sets_ = vka::create_descriptor_sets(*device_, *descriptor_pool_,
                                                  *descriptor_set_layout_);
 
@@ -801,7 +826,8 @@ void VulkanController::initialize(vk::UniqueInstance instance,
   }
 
   vka::update_descriptor_sets(*device_, descriptor_set_pointers,
-                              *uniform_buffer_);
+                              *uniform_buffer_, *texture_image_view_,
+                              *texture_sampler_);
 
   recreate_swapchain(swapchain_extent_);
 }
@@ -894,6 +920,39 @@ void VulkanController::create_index_buffer() {
 
   vka::copy_buffer_to_buffer(*device_, *staging_buffer, *index_buffer_,
                              indices_size, *command_pool_, queue_index_);
+}
+void VulkanController::create_texture_image() {
+  texture_image_ = vka::create_image(
+      *device_, texture_.width, texture_.height, vk::Format::eR8G8B8A8Unorm,
+      vk::ImageTiling::eOptimal,
+      vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled);
+
+  texture_image_memory_ = vka::allocate_image_memory(
+      *device_, *texture_image_, physical_device_.getMemoryProperties(),
+      vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+  (*device_).bindImageMemory(*texture_image_, *texture_image_memory_, 0);
+
+  const uint32_t size = static_cast<uint32_t>(texture_.size);
+
+  vk::UniqueBuffer staging_buffer =
+      vka::create_buffer(*device_, size, vk::BufferUsageFlagBits::eTransferSrc);
+
+  vk::UniqueDeviceMemory staging_buffer_memory = vka::allocate_buffer_memory(
+      *device_, *staging_buffer, physical_device_.getMemoryProperties(),
+      vk::MemoryPropertyFlagBits::eHostVisible |
+          vk::MemoryPropertyFlagBits::eHostCoherent);
+
+  (*device_).bindBufferMemory(*staging_buffer, *staging_buffer_memory, 0);
+
+  vka::fill_buffer(*device_, *staging_buffer_memory, texture_);
+
+  vka::copy_buffer_to_image(*device_, *staging_buffer, *texture_image_,
+                            texture_.width, texture_.height, *command_pool_,
+                            queue_index_);
+
+  texture_image_view_ =
+      vka::create_texture_image_view(*device_, *texture_image_);
 }
 void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
   swapchain_extent_ = swapchain_extent;
@@ -988,6 +1047,10 @@ void VulkanController::release_swapchain() {
 }
 void VulkanController::release() {
   release_swapchain();
+  texture_sampler_.release();
+  texture_image_view_.release();
+  texture_image_.release();
+  texture_image_memory_.release();
   index_buffer_.release();
   index_buffer_memory_.release();
   vertex_buffer_.release();
