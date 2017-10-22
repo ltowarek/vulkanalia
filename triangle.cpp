@@ -723,6 +723,10 @@ void transition_image_layout(const vk::Device &device,
 
   end_command(device, std::move(command_buffer), queue_index);
 }
+vk::UniqueImageView create_texture_image_view(const vk::Device &device,
+                                              const vk::Image &image) {
+  return create_image_view(device, image, vk::Format::eR8G8B8A8Unorm);
+}
 VulkanController::VulkanController()
     : vertices_({{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
                  {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},

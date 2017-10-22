@@ -185,6 +185,8 @@ void transition_image_layout(const vk::Device &device,
                              const vk::ImageLayout old_layout,
                              const vk::ImageLayout new_layout,
                              const vk::Image &image);
+vk::UniqueImageView create_texture_image_view(const vk::Device &device,
+                                              const vk::Image &image);
 class VulkanController {
 public:
   VulkanController();

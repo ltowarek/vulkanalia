@@ -1001,3 +1001,8 @@ TEST_F(TriangleTest, CopiesBufferToImageWithoutThrowingException) {
       device(), staging_texture_buffer(), texture_image(), texture().width,
       texture().height, command_pool(), queue_index()));
 }
+
+TEST_F(TriangleTest, CreatesTextureImageViewWithoutThrowingException) {
+  texture_image_memory();
+  EXPECT_NO_THROW(vka::create_texture_image_view(device(), texture_image()));
+}
