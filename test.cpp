@@ -318,13 +318,48 @@ protected:
   }
   const vk::Image &texture_image() {
     if (!texture_image_) {
-      texture_image_ =
-          vka::create_image(device(), 32, 64, vk::Format::eR8G8B8A8Unorm,
-                            vk::ImageTiling::eOptimal,
-                            vk::ImageUsageFlagBits::eTransferDst |
-                                vk::ImageUsageFlagBits::eSampled);
+      texture_image_ = vka::create_image(
+          device(), texture().width, texture().height,
+          vk::Format::eR8G8B8A8Unorm, vk::ImageTiling::eOptimal,
+          vk::ImageUsageFlagBits::eTransferDst |
+              vk::ImageUsageFlagBits::eSampled);
     }
     return *texture_image_;
+  }
+  const vk::DeviceMemory &texture_image_memory() {
+    if (!texture_image_memory_) {
+      texture_image_memory_ = vka::allocate_image_memory(
+          device(), texture_image(), physical_device().getMemoryProperties(),
+          vk::MemoryPropertyFlagBits::eDeviceLocal);
+      device().bindImageMemory(texture_image(), *texture_image_memory_, 0);
+    }
+    return *texture_image_memory_;
+  }
+  const vk::Buffer &staging_texture_buffer() {
+    if (!staging_texture_buffer_) {
+      const uint32_t size = static_cast<uint32_t>(texture().size);
+      staging_texture_buffer_ = vka::create_buffer(
+          device(), size, vk::BufferUsageFlagBits::eTransferSrc);
+    }
+    return *staging_texture_buffer_;
+  }
+  const vk::DeviceMemory &staging_texture_buffer_memory() {
+    if (!staging_texture_buffer_memory_) {
+      staging_texture_buffer_memory_ = vka::allocate_buffer_memory(
+          device(), staging_texture_buffer(),
+          physical_device().getMemoryProperties(),
+          vk::MemoryPropertyFlagBits::eHostVisible |
+              vk::MemoryPropertyFlagBits::eHostCoherent);
+      device().bindBufferMemory(staging_texture_buffer(),
+                                *staging_texture_buffer_memory_, 0);
+    }
+    return *staging_texture_buffer_memory_;
+  }
+  const vka::Texture &texture() {
+    if (texture_.data == nullptr) {
+      texture_ = std::move(vka::Texture("texture.jpg"));
+    }
+    return texture_;
   }
   const std::vector<vka::Vertex> vertices() { return vertices_; }
   const std::vector<uint16_t> indices() { return indices_; }
@@ -350,7 +385,10 @@ protected:
 
     swapchain_.release();
 
+    staging_texture_buffer_.release();
+    staging_texture_buffer_memory_.release();
     texture_image_.release();
+    texture_image_memory_.release();
     index_buffer_.release();
     index_buffer_memory_.release();
     vertex_buffer_.release();
@@ -380,6 +418,7 @@ private:
       {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
       {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
   const std::vector<uint16_t> indices_ = {0, 1, 2, 2, 3, 0};
+  vka::Texture texture_;
   const vka::UniformBufferObject uniform_buffer_object_ = {};
   WindowManager window_manager_ = WindowManager();
   vk::PhysicalDevice physical_device_ = vk::PhysicalDevice();
@@ -418,6 +457,10 @@ private:
   std::vector<vk::UniqueFramebuffer> framebuffers_ =
       std::vector<vk::UniqueFramebuffer>();
   vk::UniqueImage texture_image_ = vk::UniqueImage();
+  vk::UniqueDeviceMemory texture_image_memory_ = vk::UniqueDeviceMemory();
+  vk::UniqueDeviceMemory staging_texture_buffer_memory_ =
+      vk::UniqueDeviceMemory();
+  vk::UniqueBuffer staging_texture_buffer_ = vk::UniqueBuffer();
 };
 
 vk::UniqueInstance TriangleTest::instance_ = vk::UniqueInstance();
@@ -938,7 +981,18 @@ TEST_F(TriangleTest, AllocatesMemoryForImageWithoutThrowingException) {
 
 TEST_F(TriangleTest, TransitionsImageLayoutWithoutThrowingException) {
   EXPECT_NO_THROW(vka::transition_image_layout(
-                      device(), command_pool(), queue_index(),
-                      vk::ImageLayout::eUndefined,
-                      vk::ImageLayout::eTransferDstOptimal, texture_image()););
+      device(), command_pool(), queue_index(), vk::ImageLayout::eUndefined,
+      vk::ImageLayout::eTransferDstOptimal, texture_image()));
+}
+
+TEST_F(TriangleTest, CopiesBufferToImageWithoutThrowingException) {
+  staging_texture_buffer_memory();
+  vka::fill_buffer(device(), staging_texture_buffer_memory(), texture());
+  texture_image_memory();
+  vka::transition_image_layout(
+      device(), command_pool(), queue_index(), vk::ImageLayout::eUndefined,
+      vk::ImageLayout::eTransferDstOptimal, texture_image());
+  EXPECT_NO_THROW(vka::copy_buffer_to_image(
+      device(), staging_texture_buffer(), texture_image(), texture().width,
+      texture().height, command_pool(), queue_index()));
 }

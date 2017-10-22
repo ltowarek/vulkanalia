@@ -30,9 +30,9 @@ struct Texture {
   uint32_t width;
   uint32_t height;
   uint64_t size;
-  uint8_t *data;
+  std::unique_ptr<uint8_t, void (*)(uint8_t *)> data;
+  Texture();
   Texture(const std::string &file_name);
-  ~Texture();
 };
 float get_delta_time_per_second(
     const std::chrono::time_point<std::chrono::high_resolution_clock>
@@ -85,6 +85,8 @@ template <typename T>
 void fill_buffer(const vk::Device &device,
                  const vk::DeviceMemory &buffer_memory,
                  const std::vector<T> &data);
+void fill_buffer(const vk::Device &device,
+                 const vk::DeviceMemory &buffer_memory, const Texture &data);
 vk::UniqueCommandBuffer begin_command(const vk::Device &device,
                                       const vk::CommandPool &command_pool);
 void end_command(const vk::Device &device,
@@ -96,6 +98,12 @@ void copy_buffer_to_buffer(const vk::Device &device,
                            const uint32_t size,
                            const vk::CommandPool &command_pool,
                            const uint32_t queue_index);
+void copy_buffer_to_image(const vk::Device &device,
+                          const vk::Buffer &source_buffer,
+                          const vk::Image &destination_image,
+                          const uint32_t width, const uint32_t height,
+                          const vk::CommandPool &command_pool,
+                          const uint32_t queue_index);
 std::vector<vk::UniqueCommandBuffer>
 create_command_buffers(const vk::Device &device,
                        const vk::CommandPool &command_pool,

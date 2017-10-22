@@ -22,15 +22,20 @@
 #include <stb_image.h>
 
 namespace vka {
-Texture::Texture(const std::string &file_name) {
+void image_free(uint8_t *t) {
+  if (t != nullptr)
+    stbi_image_free(t);
+}
+Texture::Texture() : width(0), height(0), size(0), data(nullptr, image_free) {}
+Texture::Texture(const std::string &file_name) : Texture() {
   int tmp_width, tmp_height, tmp_channels;
-  data = stbi_load(file_name.c_str(), &tmp_width, &tmp_height, &tmp_channels,
-                   STBI_rgb_alpha);
+  uint8_t *tmp_data = stbi_load(file_name.c_str(), &tmp_width, &tmp_height,
+                                &tmp_channels, STBI_rgb_alpha);
+  data = std::unique_ptr<uint8_t, void (*)(uint8_t *)>(tmp_data, image_free);
   width = static_cast<uint32_t>(tmp_width);
   height = static_cast<uint32_t>(tmp_height);
   size = width * height * STBI_rgb_alpha;
 }
-Texture::~Texture() { stbi_image_free(data); }
 float get_delta_time_per_second(
     const std::chrono::time_point<std::chrono::high_resolution_clock>
         start_time,
@@ -167,6 +172,13 @@ void fill_buffer(const vk::Device &device,
   std::memcpy(pointer, &data, size);
   device.unmapMemory(buffer_memory);
 }
+void fill_buffer(const vk::Device &device,
+                 const vk::DeviceMemory &buffer_memory, const Texture &data) {
+  void *pointer;
+  device.mapMemory(buffer_memory, 0, data.size, vk::MemoryMapFlags(), &pointer);
+  std::memcpy(pointer, data.data.get(), data.size);
+  device.unmapMemory(buffer_memory);
+}
 template <typename T>
 void fill_buffer(const vk::Device &device,
                  const vk::DeviceMemory &buffer_memory,
@@ -212,6 +224,25 @@ void copy_buffer_to_buffer(const vk::Device &device,
 
   const vk::BufferCopy region(0, 0, size);
   (*command_buffer).copyBuffer(source_buffer, destination_buffer, 1, &region);
+
+  end_command(device, std::move(command_buffer), queue_index);
+}
+void copy_buffer_to_image(const vk::Device &device,
+                          const vk::Buffer &source_buffer,
+                          const vk::Image &destination_image,
+                          const uint32_t width, const uint32_t height,
+                          const vk::CommandPool &command_pool,
+                          const uint32_t queue_index) {
+  vk::UniqueCommandBuffer command_buffer = begin_command(device, command_pool);
+
+  vk::BufferImageCopy region;
+  region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+  region.imageSubresource.layerCount = 1;
+  region.imageExtent = vk::Extent3D(width, height, 1);
+
+  (*command_buffer)
+      .copyBufferToImage(source_buffer, destination_image,
+                         vk::ImageLayout::eTransferDstOptimal, 1, &region);
 
   end_command(device, std::move(command_buffer), queue_index);
 }
