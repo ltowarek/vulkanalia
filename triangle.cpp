@@ -120,6 +120,11 @@ vk::UniqueDevice create_device(const vk::PhysicalDevice &physical_device,
       static_cast<uint32_t>(extension_names.size());
   device_info.ppEnabledExtensionNames = extension_names.data();
 
+  vk::PhysicalDeviceFeatures physical_device_features;
+  physical_device_features.samplerAnisotropy = VK_TRUE;
+
+  device_info.pEnabledFeatures = &physical_device_features;
+
   return physical_device.createDeviceUnique(device_info);
 }
 vk::UniqueCommandPool create_command_pool(const vk::Device &device,
@@ -726,6 +731,17 @@ void transition_image_layout(const vk::Device &device,
 vk::UniqueImageView create_texture_image_view(const vk::Device &device,
                                               const vk::Image &image) {
   return create_image_view(device, image, vk::Format::eR8G8B8A8Unorm);
+}
+vk::UniqueSampler create_texture_sampler(const vk::Device &device) {
+  vk::SamplerCreateInfo info;
+  info.magFilter = vk::Filter::eLinear;
+  info.minFilter = vk::Filter::eLinear;
+  info.anisotropyEnable = VK_TRUE;
+  info.maxAnisotropy = 16;
+  info.borderColor = vk::BorderColor::eIntOpaqueBlack;
+  info.compareOp = vk::CompareOp::eAlways;
+  info.mipmapMode = vk::SamplerMipmapMode::eLinear;
+  return device.createSamplerUnique(info);
 }
 VulkanController::VulkanController()
     : vertices_({{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},

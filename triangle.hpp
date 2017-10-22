@@ -187,6 +187,7 @@ void transition_image_layout(const vk::Device &device,
                              const vk::Image &image);
 vk::UniqueImageView create_texture_image_view(const vk::Device &device,
                                               const vk::Image &image);
+vk::UniqueSampler create_texture_sampler(const vk::Device &device);
 class VulkanController {
 public:
   VulkanController();

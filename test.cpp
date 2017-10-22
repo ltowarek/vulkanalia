@@ -1006,3 +1006,7 @@ TEST_F(TriangleTest, CreatesTextureImageViewWithoutThrowingException) {
   texture_image_memory();
   EXPECT_NO_THROW(vka::create_texture_image_view(device(), texture_image()));
 }
+
+TEST_F(TriangleTest, CreatesTextureSamplerWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_texture_sampler(device()));
+}
