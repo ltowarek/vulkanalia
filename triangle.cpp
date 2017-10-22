@@ -811,12 +811,12 @@ void VulkanController::initialize(vk::UniqueInstance instance,
 
   command_pool_ = vka::create_command_pool(*device_, queue_index_);
 
+  texture_ = vka::Texture("texture.jpg");
+
   create_uniform_buffer();
   create_vertex_buffer();
   create_index_buffer();
   create_texture_image();
-
-  texture_ = vka::Texture("texture.jpg");
 
   texture_sampler_ = vka::create_texture_sampler(*device_);
 
@@ -952,9 +952,16 @@ void VulkanController::create_texture_image() {
 
   vka::fill_buffer(*device_, *staging_buffer_memory, texture_);
 
+  vka::transition_image_layout(
+      *device_, *command_pool_, queue_index_, vk::ImageLayout::eUndefined,
+      vk::ImageLayout::eTransferDstOptimal, *texture_image_);
   vka::copy_buffer_to_image(*device_, *staging_buffer, *texture_image_,
                             texture_.width, texture_.height, *command_pool_,
                             queue_index_);
+  vka::transition_image_layout(*device_, *command_pool_, queue_index_,
+                               vk::ImageLayout::eTransferDstOptimal,
+                               vk::ImageLayout::eShaderReadOnlyOptimal,
+                               *texture_image_);
 
   texture_image_view_ =
       vka::create_texture_image_view(*device_, *texture_image_);
