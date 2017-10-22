@@ -324,26 +324,32 @@ vk::UniqueSwapchainKHR create_swapchain(
   info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
   return device.createSwapchainKHRUnique(info);
 }
+vk::UniqueImageView create_image_view(const vk::Device &device,
+                                      const vk::Image &image,
+                                      const vk::Format &format) {
+  vk::ImageViewCreateInfo info;
+  info.image = image;
+  info.viewType = vk::ImageViewType::e2D;
+  info.format = format;
+  info.components.r = vk::ComponentSwizzle::eR;
+  info.components.g = vk::ComponentSwizzle::eG;
+  info.components.b = vk::ComponentSwizzle::eB;
+  info.components.a = vk::ComponentSwizzle::eA;
+  info.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+  info.subresourceRange.baseMipLevel = 0;
+  info.subresourceRange.levelCount = 1;
+  info.subresourceRange.baseArrayLayer = 0;
+  info.subresourceRange.layerCount = 1;
+  return device.createImageViewUnique(info);
+}
 std::vector<vk::UniqueImageView>
 create_swapchain_image_views(const vk::Device &device,
                              const std::vector<vk::Image> images,
                              const vk::SurfaceFormatKHR &surface_format) {
   std::vector<vk::UniqueImageView> image_views(images.size());
   for (size_t i = 0; i < images.size(); ++i) {
-    vk::ImageViewCreateInfo info;
-    info.image = images[i];
-    info.viewType = vk::ImageViewType::e2D;
-    info.format = surface_format.format;
-    info.components.r = vk::ComponentSwizzle::eR;
-    info.components.g = vk::ComponentSwizzle::eG;
-    info.components.b = vk::ComponentSwizzle::eB;
-    info.components.a = vk::ComponentSwizzle::eA;
-    info.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-    info.subresourceRange.baseMipLevel = 0;
-    info.subresourceRange.levelCount = 1;
-    info.subresourceRange.baseArrayLayer = 0;
-    info.subresourceRange.layerCount = 1;
-    image_views[i] = device.createImageViewUnique(info);
+    image_views[i] =
+        create_image_view(device, images[i], surface_format.format);
   }
   return image_views;
 }

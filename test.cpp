@@ -863,6 +863,11 @@ TEST_F(TriangleTest, CreatesSwapchainWithoutThrowingException) {
   surface.release();
 }
 
+TEST_F(TriangleTest, CreatesImageViewWithoutThrowingException) {
+  EXPECT_NO_THROW(vka::create_image_view(device(), swapchain_images()[0],
+                                         surface_format().format));
+}
+
 TEST_F(TriangleTest, CreatesSwapchainImageViewsWithoutThrowingException) {
   EXPECT_NO_THROW(vka::create_swapchain_image_views(
       device(), swapchain_images(), surface_format()));
