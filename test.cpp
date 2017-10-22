@@ -429,9 +429,10 @@ private:
 
   uint32_t queue_index_ = UINT32_MAX;
   const std::vector<vka::Vertex> vertices_ = {
-      {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-      {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-      {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+      {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+      {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+      {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+      {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}};
   const std::vector<uint16_t> indices_ = {0, 1, 2, 2, 3, 0};
   vka::Texture texture_;
   const vka::UniformBufferObject uniform_buffer_object_ = {};

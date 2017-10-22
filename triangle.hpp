@@ -42,6 +42,7 @@ float get_delta_time_per_second(
 struct Vertex {
   glm::vec2 position;
   glm::vec3 color;
+  glm::vec2 texture_coordinates;
 };
 struct UniformBufferObject {
   glm::mat4 model;
