@@ -40,7 +40,7 @@ float get_delta_time_per_second(
     const std::chrono::time_point<std::chrono::high_resolution_clock>
         current_time);
 struct Vertex {
-  glm::vec2 position;
+  glm::vec3 position;
   glm::vec3 color;
   glm::vec2 texture_coordinates;
 };

@@ -56,7 +56,7 @@ std::vector<vk::VertexInputAttributeDescription> get_attribute_descriptions() {
   std::vector<vk::VertexInputAttributeDescription> descriptions(3);
   descriptions[0].binding = 0;
   descriptions[0].location = 0;
-  descriptions[0].format = vk::Format::eR32G32Sfloat;
+  descriptions[0].format = vk::Format::eR32G32B32Sfloat;
   descriptions[0].offset = offsetof(Vertex, position);
 
   descriptions[1].binding = 0;
@@ -771,10 +771,10 @@ vk::UniqueSampler create_texture_sampler(const vk::Device &device) {
   return device.createSamplerUnique(info);
 }
 VulkanController::VulkanController()
-    : vertices_({{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-                 {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-                 {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-                 {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}),
+    : vertices_({{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+                 {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+                 {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+                 {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}}),
       indices_({0, 1, 2, 2, 3, 0}){};
 VulkanController::~VulkanController() {
   if (device_) {
