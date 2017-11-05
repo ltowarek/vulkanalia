@@ -394,6 +394,7 @@ vk::UniqueRenderPass create_render_pass(const vk::Device &device,
   color_attachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
 
   vk::AttachmentReference color_attachment_reference;
+  color_attachment_reference.attachment = 0;
   color_attachment_reference.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
   vk::AttachmentDescription depth_attachment;
@@ -408,6 +409,7 @@ vk::UniqueRenderPass create_render_pass(const vk::Device &device,
   vk::AttachmentReference depth_attachment_reference;
   depth_attachment_reference.layout =
       vk::ImageLayout::eDepthStencilAttachmentOptimal;
+  depth_attachment_reference.attachment = 1;
 
   std::array<vk::AttachmentDescription, 2> attachments = {color_attachment,
                                                           depth_attachment};

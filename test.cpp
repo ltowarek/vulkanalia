@@ -996,6 +996,7 @@ TEST_F(TriangleTest, RecordsCommandBuffersWithoutThrowingException) {
   index_buffer_memory();
   uniform_buffer_memory();
   texture_image_memory();
+  depth_image_memory();
   vka::update_descriptor_sets(device(), descriptor_sets(), uniform_buffer(),
                               texture_image_view(), texture_sampler());
   EXPECT_NO_THROW(vka::record_command_buffers(
@@ -1017,6 +1018,7 @@ TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
   vka::fill_buffer(device(), staging_index_buffer_memory(), indices());
   vka::copy_buffer_to_buffer(device(), staging_index_buffer(), index_buffer(),
                              indices_size, command_pool(), queue_index());
+  depth_image_memory();
   std::vector<vk::UniqueCommandBuffer> command_buffers =
       vka::create_command_buffers(device(), command_pool(),
                                   static_cast<uint32_t>(framebuffers().size()));
