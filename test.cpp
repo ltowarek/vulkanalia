@@ -295,8 +295,9 @@ protected:
   }
   const std::vector<vk::Framebuffer> framebuffers() {
     if (framebuffers_.empty()) {
-      framebuffers_ = vka::create_framebuffers(
-          device(), render_pass(), swapchain_extent(), swapchain_image_views());
+      framebuffers_ =
+          vka::create_framebuffers(device(), render_pass(), swapchain_extent(),
+                                   swapchain_image_views(), depth_image_view());
     }
     std::vector<vk::Framebuffer> framebuffers;
     for (const auto &framebuffer : framebuffers_) {
@@ -984,8 +985,10 @@ TEST_F(TriangleTest, CreatesGraphicsPipelineWithoutThrowingException) {
 }
 
 TEST_F(TriangleTest, CreatesFramebuffersWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::create_framebuffers(
-      device(), render_pass(), swapchain_extent(), swapchain_image_views()));
+  depth_image_memory();
+  EXPECT_NO_THROW(
+      vka::create_framebuffers(device(), render_pass(), swapchain_extent(),
+                               swapchain_image_views(), depth_image_view()));
 }
 
 TEST_F(TriangleTest, RecordsCommandBuffersWithoutThrowingException) {

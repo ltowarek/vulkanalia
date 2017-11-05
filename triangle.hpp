@@ -162,7 +162,8 @@ create_graphics_pipeline(const vk::Device &device,
 std::vector<vk::UniqueFramebuffer>
 create_framebuffers(const vk::Device &device, const vk::RenderPass &render_pass,
                     const vk::Extent2D &swapchain_extent,
-                    const std::vector<vk::ImageView> &swapchain_image_views);
+                    const std::vector<vk::ImageView> &swapchain_image_views,
+                    const vk::ImageView &depth_image_view);
 void record_command_buffers(
     const vk::Device &device,
     const std::vector<vk::CommandBuffer> &command_buffers,

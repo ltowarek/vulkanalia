@@ -386,22 +386,40 @@ create_pipeline_layout(const vk::Device &device,
 }
 vk::UniqueRenderPass create_render_pass(const vk::Device &device,
                                         const vk::Format &surface_format) {
-  vk::RenderPassCreateInfo info;
   vk::AttachmentDescription color_attachment;
   color_attachment.format = surface_format;
   color_attachment.loadOp = vk::AttachmentLoadOp::eClear;
   color_attachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
   color_attachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
   color_attachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
-  info.attachmentCount = 1;
-  info.pAttachments = &color_attachment;
 
   vk::AttachmentReference color_attachment_reference;
   color_attachment_reference.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
+  vk::AttachmentDescription depth_attachment;
+  depth_attachment.format = vk::Format::eD32Sfloat;
+  depth_attachment.loadOp = vk::AttachmentLoadOp::eClear;
+  depth_attachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+  depth_attachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+  depth_attachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+  depth_attachment.finalLayout =
+      vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+  vk::AttachmentReference depth_attachment_reference;
+  depth_attachment_reference.layout =
+      vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+  std::array<vk::AttachmentDescription, 2> attachments = {color_attachment,
+                                                          depth_attachment};
+
   vk::SubpassDescription subpass;
   subpass.colorAttachmentCount = 1;
   subpass.pColorAttachments = &color_attachment_reference;
+  subpass.pDepthStencilAttachment = &depth_attachment_reference;
+
+  vk::RenderPassCreateInfo info;
+  info.attachmentCount = static_cast<uint32_t>(attachments.size());
+  info.pAttachments = attachments.data();
   info.subpassCount = 1;
   info.pSubpasses = &subpass;
 
@@ -577,14 +595,16 @@ create_graphics_pipeline(const vk::Device &device,
 std::vector<vk::UniqueFramebuffer>
 create_framebuffers(const vk::Device &device, const vk::RenderPass &render_pass,
                     const vk::Extent2D &swapchain_extent,
-                    const std::vector<vk::ImageView> &swapchain_image_views) {
+                    const std::vector<vk::ImageView> &swapchain_image_views,
+                    const vk::ImageView &depth_image_view) {
   std::vector<vk::UniqueFramebuffer> framebuffers;
   for (size_t i = 0; i < swapchain_image_views.size(); ++i) {
-    vk::ImageView attachments = swapchain_image_views[i];
+    std::array<vk::ImageView, 2> attachments = {swapchain_image_views[i],
+                                                depth_image_view};
     vk::FramebufferCreateInfo info;
     info.renderPass = render_pass;
-    info.attachmentCount = 1;
-    info.pAttachments = &attachments;
+    info.attachmentCount = static_cast<uint32_t>(attachments.size());
+    info.pAttachments = attachments.data();
     info.width = swapchain_extent.width;
     info.height = swapchain_extent.height;
     info.layers = 1;
@@ -1043,9 +1063,9 @@ void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
 
   create_depth_image();
 
-  framebuffers_ =
-      vka::create_framebuffers(*device_, *render_pass_, swapchain_extent_,
-                               swapchain_image_view_pointers);
+  framebuffers_ = vka::create_framebuffers(
+      *device_, *render_pass_, swapchain_extent_, swapchain_image_view_pointers,
+      *depth_image_view_);
 
   std::vector<vk::Framebuffer> framebuffer_pointers;
   for (const auto &framebuffer : framebuffers_) {
