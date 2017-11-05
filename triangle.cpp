@@ -633,9 +633,13 @@ void record_command_buffers(
     render_pass_begin_info.framebuffer = framebuffers[i];
     render_pass_begin_info.renderArea.extent = swapchain_extent;
 
-    vk::ClearValue clear_color;
-    render_pass_begin_info.clearValueCount = 1;
-    render_pass_begin_info.pClearValues = &clear_color;
+    std::array<vk::ClearValue, 2> clear_values = {
+        vk::ClearValue(
+            vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f})),
+        vk::ClearValue(vk::ClearDepthStencilValue(1.0f, 0))};
+    render_pass_begin_info.clearValueCount =
+        static_cast<uint32_t>(clear_values.size());
+    render_pass_begin_info.pClearValues = clear_values.data();
 
     command_buffers[i].beginRenderPass(render_pass_begin_info,
                                        vk::SubpassContents::eInline);
