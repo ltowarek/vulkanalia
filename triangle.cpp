@@ -336,7 +336,8 @@ vk::UniqueSwapchainKHR create_swapchain(
 }
 vk::UniqueImageView create_image_view(const vk::Device &device,
                                       const vk::Image &image,
-                                      const vk::Format &format) {
+                                      const vk::Format &format,
+                                      const vk::ImageAspectFlags &aspect) {
   vk::ImageViewCreateInfo info;
   info.image = image;
   info.viewType = vk::ImageViewType::e2D;
@@ -345,7 +346,7 @@ vk::UniqueImageView create_image_view(const vk::Device &device,
   info.components.g = vk::ComponentSwizzle::eG;
   info.components.b = vk::ComponentSwizzle::eB;
   info.components.a = vk::ComponentSwizzle::eA;
-  info.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+  info.subresourceRange.aspectMask = aspect;
   info.subresourceRange.baseMipLevel = 0;
   info.subresourceRange.levelCount = 1;
   info.subresourceRange.baseArrayLayer = 0;
@@ -358,8 +359,8 @@ create_swapchain_image_views(const vk::Device &device,
                              const vk::SurfaceFormatKHR &surface_format) {
   std::vector<vk::UniqueImageView> image_views(images.size());
   for (size_t i = 0; i < images.size(); ++i) {
-    image_views[i] =
-        create_image_view(device, images[i], surface_format.format);
+    image_views[i] = create_image_view(device, images[i], surface_format.format,
+                                       vk::ImageAspectFlagBits::eColor);
   }
   return image_views;
 }
@@ -757,7 +758,8 @@ void transition_image_layout(const vk::Device &device,
 }
 vk::UniqueImageView create_texture_image_view(const vk::Device &device,
                                               const vk::Image &image) {
-  return create_image_view(device, image, vk::Format::eR8G8B8A8Unorm);
+  return create_image_view(device, image, vk::Format::eR8G8B8A8Unorm,
+                           vk::ImageAspectFlagBits::eColor);
 }
 vk::UniqueSampler create_texture_sampler(const vk::Device &device) {
   vk::SamplerCreateInfo info;

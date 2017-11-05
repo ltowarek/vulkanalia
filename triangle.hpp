@@ -128,7 +128,8 @@ vk::UniqueSwapchainKHR create_swapchain(
     const vk::SurfaceKHR &surface, const vk::SwapchainKHR &old_swapchain);
 vk::UniqueImageView create_image_view(const vk::Device &device,
                                       const vk::Image &image,
-                                      const vk::Format &format);
+                                      const vk::Format &format,
+                                      const vk::ImageAspectFlags &aspect);
 std::vector<vk::UniqueImageView>
 create_swapchain_image_views(const vk::Device &device,
                              const std::vector<vk::Image> images,
