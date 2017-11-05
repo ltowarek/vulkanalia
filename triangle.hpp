@@ -210,6 +210,7 @@ private:
   void create_vertex_buffer();
   void create_index_buffer();
   void create_texture_image();
+  void create_depth_image();
   vk::PhysicalDevice physical_device_;
   uint32_t queue_index_;
   vk::SurfaceFormatKHR surface_format_;
@@ -240,6 +241,9 @@ private:
   vk::UniquePipeline graphics_pipeline_;
   std::vector<vk::UniqueCommandBuffer> command_buffers_;
   std::vector<vk::UniqueFramebuffer> framebuffers_;
+  vk::UniqueImageView depth_image_view_;
+  vk::UniqueImage depth_image_;
+  vk::UniqueDeviceMemory depth_image_memory_;
 
   const std::vector<Vertex> vertices_;
   const std::vector<uint16_t> indices_;

@@ -368,6 +368,32 @@ protected:
     }
     return *staging_texture_buffer_memory_;
   }
+  const vk::Image &depth_image() {
+    if (!depth_image_) {
+      depth_image_ =
+          vka::create_image(device(), texture().width, texture().height,
+                            vk::Format::eD32Sfloat, vk::ImageTiling::eOptimal,
+                            vk::ImageUsageFlagBits::eDepthStencilAttachment);
+    }
+    return *depth_image_;
+  }
+  const vk::DeviceMemory &depth_image_memory() {
+    if (!depth_image_memory_) {
+      depth_image_memory_ = vka::allocate_image_memory(
+          device(), depth_image(), physical_device().getMemoryProperties(),
+          vk::MemoryPropertyFlagBits::eDeviceLocal);
+      device().bindImageMemory(depth_image(), *depth_image_memory_, 0);
+    }
+    return *depth_image_memory_;
+  }
+  const vk::ImageView &depth_image_view() {
+    if (!depth_image_view_) {
+      depth_image_view_ = vka::create_image_view(
+          device(), depth_image(), vk::Format::eD32Sfloat,
+          vk::ImageAspectFlagBits::eDepth);
+    }
+    return *depth_image_view_;
+  }
   const vka::Texture &texture() {
     if (texture_.data == nullptr) {
       texture_ = std::move(vka::Texture("texture.jpg"));
@@ -398,6 +424,9 @@ protected:
 
     swapchain_.release();
 
+    depth_image_view_.release();
+    depth_image_.release();
+    depth_image_memory_.release();
     staging_texture_buffer_.release();
     staging_texture_buffer_memory_.release();
     texture_sampler_.release();
@@ -483,6 +512,9 @@ private:
   vk::UniqueDeviceMemory staging_texture_buffer_memory_ =
       vk::UniqueDeviceMemory();
   vk::UniqueBuffer staging_texture_buffer_ = vk::UniqueBuffer();
+  vk::UniqueImageView depth_image_view_ = vk::UniqueImageView();
+  vk::UniqueImage depth_image_ = vk::UniqueImage();
+  vk::UniqueDeviceMemory depth_image_memory_ = vk::UniqueDeviceMemory();
 };
 
 vk::UniqueInstance TriangleTest::instance_ = vk::UniqueInstance();

@@ -722,6 +722,15 @@ get_transition_properties(const vk::ImageLayout old_layout,
     properties.destination_mask = vk::AccessFlagBits::eShaderRead;
     properties.source_stage = vk::PipelineStageFlagBits::eTransfer;
     properties.destination_stage = vk::PipelineStageFlagBits::eFragmentShader;
+  } else if (old_layout == vk::ImageLayout::eUndefined &&
+             new_layout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
+    properties.source_mask = vk::AccessFlags();
+    properties.destination_mask =
+        vk::AccessFlagBits::eDepthStencilAttachmentRead |
+        vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+    properties.source_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+    properties.destination_stage =
+        vk::PipelineStageFlagBits::eEarlyFragmentTests;
   }
   return properties;
 }
@@ -737,8 +746,12 @@ void transition_image_layout(const vk::Device &device,
   barrier.oldLayout = old_layout;
   barrier.newLayout = new_layout;
   barrier.image = image;
+
   vk::ImageSubresourceRange subresource;
-  subresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+  subresource.aspectMask =
+      new_layout == vk::ImageLayout::eDepthStencilAttachmentOptimal
+          ? vk::ImageAspectFlagBits::eDepth
+          : vk::ImageAspectFlagBits::eColor;
   subresource.levelCount = 1;
   subresource.layerCount = 1;
   barrier.subresourceRange = subresource;
@@ -972,6 +985,26 @@ void VulkanController::create_texture_image() {
   texture_image_view_ =
       vka::create_texture_image_view(*device_, *texture_image_);
 }
+void VulkanController::create_depth_image() {
+  depth_image_ =
+      vka::create_image(*device_, texture_.width, texture_.height,
+                        vk::Format::eD32Sfloat, vk::ImageTiling::eOptimal,
+                        vk::ImageUsageFlagBits::eDepthStencilAttachment);
+
+  depth_image_memory_ = vka::allocate_image_memory(
+      *device_, *depth_image_, physical_device_.getMemoryProperties(),
+      vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+  (*device_).bindImageMemory(*depth_image_, *depth_image_memory_, 0);
+
+  vka::transition_image_layout(
+      *device_, *command_pool_, queue_index_, vk::ImageLayout::eUndefined,
+      vk::ImageLayout::eDepthStencilAttachmentOptimal, *depth_image_);
+
+  depth_image_view_ =
+      vka::create_image_view(*device_, *depth_image_, vk::Format::eD32Sfloat,
+                             vk::ImageAspectFlagBits::eDepth);
+}
 void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
   swapchain_extent_ = swapchain_extent;
 
@@ -1007,6 +1040,8 @@ void VulkanController::recreate_swapchain(vk::Extent2D swapchain_extent) {
 
   graphics_pipeline_ = vka::create_graphics_pipeline(
       *device_, *render_pass_, swapchain_extent_, *pipeline_layout_);
+
+  create_depth_image();
 
   framebuffers_ =
       vka::create_framebuffers(*device_, *render_pass_, swapchain_extent_,
@@ -1045,6 +1080,10 @@ void VulkanController::draw() {
   vka::draw_frame(*device_, *swapchain_, command_buffer_pointers, queue_index_);
 }
 void VulkanController::release_swapchain() {
+  depth_image_view_.release();
+  depth_image_.release();
+  depth_image_memory_.release();
+
   for (auto &framebuffer : framebuffers_) {
     framebuffer.release();
   }
