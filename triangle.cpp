@@ -574,6 +574,12 @@ create_graphics_pipeline(const vk::Device &device,
   vk::PipelineMultisampleStateCreateInfo multisample_state;
   info.pMultisampleState = &multisample_state;
 
+  vk::PipelineDepthStencilStateCreateInfo depth_stencil;
+  depth_stencil.depthTestEnable = VK_TRUE;
+  depth_stencil.depthWriteEnable = VK_TRUE;
+  depth_stencil.depthCompareOp = vk::CompareOp::eLess;
+  info.pDepthStencilState = &depth_stencil;
+
   vk::PipelineColorBlendAttachmentState color_blend_attachment_state;
   color_blend_attachment_state.colorWriteMask =
       vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
