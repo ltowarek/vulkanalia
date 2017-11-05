@@ -62,11 +62,21 @@ add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE "${CMAKE_BINARY_DIR}/external/stb-src")
 add_library(STB::STB ALIAS stb)
 
+configure_file(cmake/tinyobjloader.cmake.in ${CMAKE_BINARY_DIR}/download/tinyobjloader/CMakeLists.txt)
+execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" . 
+                WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/download/tinyobjloader")
+execute_process(COMMAND "${CMAKE_COMMAND}" --build . 
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/download/tinyobjloader")
+
+add_library(tinyobjloader INTERFACE)
+target_include_directories(tinyobjloader INTERFACE "${CMAKE_BINARY_DIR}/external/tinyobjloader-src")
+add_library(TINYOBJLOADER::TINYOBJLOADER ALIAS tinyobjloader)
+
 find_package(Vulkan REQUIRED)
 
 add_library(triangle triangle.hpp triangle.cpp)
 add_library(vka::triangle ALIAS triangle)
-target_link_libraries(triangle GLFW::GLFW Vulkan::Vulkan GLM::GLM STB::STB)
+target_link_libraries(triangle GLFW::GLFW Vulkan::Vulkan GLM::GLM STB::STB TINYOBJLOADER::TINYOBJLOADER)
 
 add_executable(vulkanalia main.cpp)
 target_link_libraries(vulkanalia vka::triangle)
