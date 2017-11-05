@@ -93,6 +93,14 @@ add_custom_command(TARGET vulkanalia POST_BUILD
                    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
                    "${CMAKE_SOURCE_DIR}/texture.jpg"              
                    $<TARGET_FILE_DIR:vulkanalia>)
+add_custom_command(TARGET vulkanalia POST_BUILD 
+                   COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                   "${CMAKE_SOURCE_DIR}/chalet.jpg"              
+                   $<TARGET_FILE_DIR:vulkanalia>)
+add_custom_command(TARGET vulkanalia POST_BUILD 
+                   COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                   "${CMAKE_SOURCE_DIR}/chalet.obj"              
+                   $<TARGET_FILE_DIR:vulkanalia>)
 
 add_executable(vulkanalia_test test.cpp)
 target_link_libraries(vulkanalia_test PRIVATE GTest::GTest GTest::Main vka::triangle)

@@ -16,6 +16,7 @@
 
 #include "triangle.hpp"
 #include <fstream>
+#include <unordered_map>
 
 #include <glm/gtc/matrix_transform.hpp>
 #define STB_IMAGE_IMPLEMENTATION
@@ -46,6 +47,40 @@ float get_delta_time_per_second(
   const auto delta_time = std::chrono::duration_cast<std::chrono::milliseconds>(
       current_time - start_time);
   return delta_time.count() / static_cast<float>(std::milli::den);
+}
+bool Vertex::operator==(const Vertex &other) const {
+  return position == other.position && color == other.color &&
+         texture_coordinates == other.texture_coordinates;
+}
+Model::Model(const std::string &file_name) {
+  tinyobj::attrib_t attributes;
+  std::vector<tinyobj::shape_t> shapes;
+  std::vector<tinyobj::material_t> materials;
+  std::string error;
+
+  tinyobj::LoadObj(&attributes, &shapes, &materials, &error, file_name.c_str());
+
+  std::unordered_map<Vertex, uint32_t> unique_vertices;
+
+  for (const auto &shape : shapes) {
+    for (const auto &index : shape.mesh.indices) {
+      Vertex vertex;
+      vertex.position = {attributes.vertices[3 * index.vertex_index + 0],
+                         attributes.vertices[3 * index.vertex_index + 1],
+                         attributes.vertices[3 * index.vertex_index + 2]};
+      vertex.texture_coordinates = {
+          attributes.texcoords[2 * index.texcoord_index + 0],
+          1.0f - attributes.texcoords[2 * index.texcoord_index + 1]};
+      vertex.color = {1.0f, 1.0f, 1.0f};
+
+      if (unique_vertices.count(vertex) == 0) {
+        unique_vertices[vertex] = static_cast<uint32_t>(vertices.size());
+        vertices.push_back(vertex);
+      }
+
+      indices.push_back(unique_vertices[vertex]);
+    }
+  }
 }
 vk::VertexInputBindingDescription get_binding_description() {
   vk::VertexInputBindingDescription description;
@@ -629,7 +664,7 @@ void record_command_buffers(
     const vk::PipelineLayout &pipeline_layout,
     const std::vector<vk::Framebuffer> &framebuffers,
     const vk::Extent2D &swapchain_extent, const vk::Buffer &vertex_buffer,
-    const vk::Buffer &index_buffer, const std::vector<uint16_t> &indices,
+    const vk::Buffer &index_buffer, const std::vector<uint32_t> &indices,
     const std::vector<vk::DescriptorSet> &descriptor_sets) {
   for (size_t i = 0; i < command_buffers.size(); ++i) {
     vk::CommandBufferBeginInfo command_buffer_begin_info;
@@ -657,7 +692,7 @@ void record_command_buffers(
                                     graphics_pipeline);
     command_buffers[i].bindVertexBuffers(0, {vertex_buffer}, {0});
     command_buffers[i].bindIndexBuffer({index_buffer}, {0},
-                                       vk::IndexType::eUint16);
+                                       vk::IndexType::eUint32);
     command_buffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
                                           pipeline_layout, 0, descriptor_sets,
                                           {});
@@ -819,16 +854,7 @@ vk::UniqueSampler create_texture_sampler(const vk::Device &device) {
   info.mipmapMode = vk::SamplerMipmapMode::eLinear;
   return device.createSamplerUnique(info);
 }
-VulkanController::VulkanController()
-    : vertices_({{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-                 {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-                 {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-                 {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-                 {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-                 {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-                 {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-                 {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}}),
-      indices_({0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4}){};
+VulkanController::VulkanController() {}
 VulkanController::~VulkanController() {
   if (device_) {
     (*device_).waitIdle();
@@ -838,6 +864,11 @@ VulkanController::~VulkanController() {
 void VulkanController::initialize(vk::UniqueInstance instance,
                                   vk::UniqueSurfaceKHR surface,
                                   const vk::Extent2D swapchain_extent) {
+  texture_ = vka::Texture("chalet.jpg");
+  vka::Model model("chalet.obj");
+  vertices_ = model.vertices;
+  indices_ = model.indices;
+
   instance_ = std::move(instance);
   surface_ = std::move(surface);
   swapchain_extent_ = swapchain_extent;
@@ -863,8 +894,6 @@ void VulkanController::initialize(vk::UniqueInstance instance,
   device_ = vka::create_device(physical_device_, queue_index_);
 
   command_pool_ = vka::create_command_pool(*device_, queue_index_);
-
-  texture_ = vka::Texture("texture.jpg");
 
   create_uniform_buffer();
   create_vertex_buffer();

@@ -22,6 +22,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
+#include <glm/gtx/hash.hpp>
 #include <vulkan/vulkan.hpp>
 
 #include <chrono>
@@ -44,11 +45,18 @@ struct Vertex {
   glm::vec3 position;
   glm::vec3 color;
   glm::vec2 texture_coordinates;
+  bool operator==(const Vertex &other) const;
 };
 struct UniformBufferObject {
   glm::mat4 model;
   glm::mat4 view;
   glm::mat4 projection;
+};
+struct Model {
+  std::vector<Vertex> vertices;
+  std::vector<uint32_t> indices;
+  Model() = default;
+  Model(const std::string &file_name);
 };
 vk::VertexInputBindingDescription get_binding_description();
 std::vector<vk::VertexInputAttributeDescription> get_attribute_descriptions();
@@ -171,7 +179,7 @@ void record_command_buffers(
     const vk::PipelineLayout &pipeline_layout,
     const std::vector<vk::Framebuffer> &framebuffers,
     const vk::Extent2D &swapchain_extent, const vk::Buffer &vertex_buffer,
-    const vk::Buffer &index_buffer, const std::vector<uint16_t> &indices,
+    const vk::Buffer &index_buffer, const std::vector<uint32_t> &indices,
     const std::vector<vk::DescriptorSet> &descriptor_sets);
 void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
                 const std::vector<vk::CommandBuffer> &command_buffers,
@@ -246,8 +254,8 @@ private:
   vk::UniqueImage depth_image_;
   vk::UniqueDeviceMemory depth_image_memory_;
 
-  const std::vector<Vertex> vertices_;
-  const std::vector<uint16_t> indices_;
+  std::vector<Vertex> vertices_;
+  std::vector<uint32_t> indices_;
 };
 class TriangleApplication {
 public:
@@ -258,6 +266,16 @@ public:
 private:
   vka::VulkanController vulkan_controller_;
   GLFWwindow *window_;
+};
+}
+namespace std {
+template <> struct hash<vka::Vertex> {
+  size_t operator()(vka::Vertex const &vertex) const {
+    return ((hash<glm::vec3>()(vertex.position) ^
+             (hash<glm::vec3>()(vertex.color) << 1)) >>
+            1) ^
+           (hash<glm::vec2>()(vertex.texture_coordinates) << 1);
+  }
 };
 }
 #endif
