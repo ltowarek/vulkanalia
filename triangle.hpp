@@ -65,7 +65,7 @@ struct Version {
   uint32_t minor;
   uint32_t patch;
 };
-vk::ApplicationInfo create_application_info(const std::string name,
+vk::ApplicationInfo create_application_info(const std::string &name,
                                             const Version version);
 vk::UniqueInstance
 create_instance(const vk::ApplicationInfo application_info,
@@ -267,7 +267,7 @@ private:
   vka::VulkanController vulkan_controller_;
   GLFWwindow *window_;
 };
-}
+} // namespace vka
 namespace std {
 template <> struct hash<vka::Vertex> {
   size_t operator()(vka::Vertex const &vertex) const {
@@ -277,5 +277,5 @@ template <> struct hash<vka::Vertex> {
            (hash<glm::vec2>()(vertex.texture_coordinates) << 1);
   }
 };
-}
+} // namespace std
 #endif

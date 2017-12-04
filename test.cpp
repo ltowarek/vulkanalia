@@ -52,8 +52,9 @@ protected:
   void TearDown() { release(); }
   static const vk::Instance &instance() {
     if (!instance_) {
+      const std::string application_name = "Test";
       vk::ApplicationInfo application_info =
-          vka::create_application_info("Test", {1, 2, 3});
+          vka::create_application_info(application_name, {1, 2, 3});
       instance_ = vka::create_instance(application_info,
                                        WindowManager::extension_names());
     }

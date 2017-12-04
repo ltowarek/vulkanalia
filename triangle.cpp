@@ -108,7 +108,7 @@ std::vector<vk::VertexInputAttributeDescription> get_attribute_descriptions() {
 
   return descriptions;
 }
-vk::ApplicationInfo create_application_info(const std::string name,
+vk::ApplicationInfo create_application_info(const std::string &name,
                                             const Version version) {
   vk::ApplicationInfo info;
   info.pApplicationName = name.c_str();
@@ -1238,4 +1238,4 @@ void TriangleApplication::resize(GLFWwindow *window, int width, int height) {
       reinterpret_cast<TriangleApplication *>(glfwGetWindowUserPointer(window));
   application->recreate_swapchain();
 }
-}
+} // namespace vka
