@@ -61,10 +61,16 @@ protected:
       extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
       instance_ = vka::create_instance("Test", {1, 2, 3}, extension_names,
                                        {"VK_LAYER_LUNARG_standard_validation"});
-      debug_report_callback_ = vka::create_debug_report_callback(
-          *instance_, &validation_layer_error_occurred_);
+      debug_report_callback();
     }
     return *instance_;
+  }
+  static const vk::DebugReportCallbackEXT &debug_report_callback() {
+    if (!debug_report_callback_) {
+      debug_report_callback_ = vka::create_debug_report_callback(
+          instance(), &validation_layer_error_occurred_);
+    }
+    return *debug_report_callback_;
   }
   const vk::Device &device() {
     if (!device_) {
