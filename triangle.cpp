@@ -25,6 +25,21 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
+static PFN_vkCreateDebugReportCallbackEXT pfn_vkCreateDebugReportCallbackEXT;
+VkResult vkCreateDebugReportCallbackEXT(
+    VkInstance instance, const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkDebugReportCallbackEXT *pCallback) {
+  return pfn_vkCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator,
+                                            pCallback);
+}
+static PFN_vkDestroyDebugReportCallbackEXT pfn_vkDestroyDebugReportCallbackEXT;
+void vkDestroyDebugReportCallbackEXT(VkInstance instance,
+                                     VkDebugReportCallbackEXT callback,
+                                     const VkAllocationCallbacks *pAllocator) {
+  pfn_vkDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
+}
+
 namespace vka {
 void image_free(uint8_t *t) {
   if (t != nullptr)
@@ -109,12 +124,29 @@ std::vector<vk::VertexInputAttributeDescription> get_attribute_descriptions() {
 
   return descriptions;
 }
+void load_api_calls(const vk::Instance &instance) {
+  pfn_vkCreateDebugReportCallbackEXT =
+      reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(
+          instance.getProcAddr("vkCreateDebugReportCallbackEXT"));
+  pfn_vkDestroyDebugReportCallbackEXT =
+      reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>(
+          instance.getProcAddr("vkDestroyDebugReportCallbackEXT"));
+}
 VKAPI_ATTR VkBool32 VKAPI_CALL debug_report_callback(
     VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type,
     uint64_t object, size_t location, int32_t code, const char *layer_prefix,
     const char *message, void *user_data) {
   std::cerr << message << "\n";
   return VK_FALSE;
+}
+vk::UniqueDebugReportCallbackEXT
+create_debug_report_callback(const vk::Instance &instance) {
+  load_api_calls(instance);
+  vk::DebugReportCallbackCreateInfoEXT info;
+  info.pfnCallback = debug_report_callback;
+  info.flags =
+      vk::DebugReportFlagBitsEXT::eWarning | vk::DebugReportFlagBitsEXT::eError;
+  return instance.createDebugReportCallbackEXTUnique(info);
 }
 vk::UniqueInstance
 create_instance(const std::string &name, const Version version,

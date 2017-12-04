@@ -65,10 +65,8 @@ struct Version {
   uint32_t minor;
   uint32_t patch;
 };
-VKAPI_ATTR VkBool32 VKAPI_CALL debug_report_callback(
-    VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type,
-    uint64_t object, size_t location, int32_t code, const char *layer_prefix,
-    const char *message, void *user_data);
+vk::UniqueDebugReportCallbackEXT
+create_debug_report_callback(const vk::Instance &instance);
 vk::UniqueInstance
 create_instance(const std::string &name, const Version version,
                 const std::vector<const char *> &required_extension_names,
