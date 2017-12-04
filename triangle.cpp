@@ -16,6 +16,7 @@
 
 #include "triangle.hpp"
 #include <fstream>
+#include <iostream>
 #include <unordered_map>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -107,6 +108,13 @@ std::vector<vk::VertexInputAttributeDescription> get_attribute_descriptions() {
   descriptions[2].offset = offsetof(Vertex, texture_coordinates);
 
   return descriptions;
+}
+VKAPI_ATTR VkBool32 VKAPI_CALL debug_report_callback(
+    VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type,
+    uint64_t object, size_t location, int32_t code, const char *layer_prefix,
+    const char *message, void *user_data) {
+  std::cerr << message << "\n";
+  return VK_FALSE;
 }
 vk::UniqueInstance
 create_instance(const std::string &name, const Version version,
