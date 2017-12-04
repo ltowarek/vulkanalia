@@ -1204,6 +1204,7 @@ void TriangleApplication::run() {
   for (uint32_t i = 0; i < glfw_extension_count; ++i) {
     extension_names.push_back(glfw_extensions[i]);
   }
+  extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 
   vk::UniqueInstance instance = vka::create_instance(
       application_name, application_version, extension_names);

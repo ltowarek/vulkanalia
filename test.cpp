@@ -52,8 +52,10 @@ protected:
   void TearDown() { release(); }
   static const vk::Instance &instance() {
     if (!instance_) {
-      instance_ = vka::create_instance("Test", {1, 2, 3},
-                                       WindowManager::extension_names());
+      std::vector<const char *> extension_names =
+          WindowManager::extension_names();
+      extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+      instance_ = vka::create_instance("Test", {1, 2, 3}, extension_names);
     }
     return *instance_;
   }
