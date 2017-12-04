@@ -1260,6 +1260,9 @@ void TriangleApplication::run() {
   vk::UniqueInstance instance = vka::create_instance(
       application_name, application_version, extension_names, layer_names);
 
+  vk::UniqueDebugReportCallbackEXT debug_report_callback =
+      vka::create_debug_report_callback(*instance, nullptr);
+
   VkSurfaceKHR raw_surface;
   glfwCreateWindowSurface(*instance, window_, nullptr, &raw_surface);
   vk::UniqueSurfaceKHR surface(raw_surface);
