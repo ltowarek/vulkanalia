@@ -137,15 +137,20 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_report_callback(
     uint64_t object, size_t location, int32_t code, const char *layer_prefix,
     const char *message, void *user_data) {
   std::cerr << message << "\n";
+  if (user_data != nullptr) {
+    bool *error_occured = reinterpret_cast<bool *>(user_data);
+    *error_occured = true;
+  }
   return VK_FALSE;
 }
 vk::UniqueDebugReportCallbackEXT
-create_debug_report_callback(const vk::Instance &instance) {
+create_debug_report_callback(const vk::Instance &instance, void *user_data) {
   load_api_calls(instance);
   vk::DebugReportCallbackCreateInfoEXT info;
   info.pfnCallback = debug_report_callback;
   info.flags =
       vk::DebugReportFlagBitsEXT::eWarning | vk::DebugReportFlagBitsEXT::eError;
+  info.pUserData = user_data;
   return instance.createDebugReportCallbackEXTUnique(info);
 }
 vk::UniqueInstance

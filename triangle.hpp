@@ -66,7 +66,7 @@ struct Version {
   uint32_t patch;
 };
 vk::UniqueDebugReportCallbackEXT
-create_debug_report_callback(const vk::Instance &instance);
+create_debug_report_callback(const vk::Instance &instance, void *user_data);
 vk::UniqueInstance
 create_instance(const std::string &name, const Version version,
                 const std::vector<const char *> &required_extension_names,

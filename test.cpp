@@ -49,7 +49,11 @@ private:
 class TriangleTest : public ::testing::Test {
 protected:
   static void TearDownTestCase() { instance_.release(); }
-  void TearDown() { release(); }
+  void SetUp() { validation_layer_error_occurred_ = false; }
+  void TearDown() {
+    release();
+    EXPECT_FALSE(validation_layer_error_occurred_);
+  }
   static const vk::Instance &instance() {
     if (!instance_) {
       std::vector<const char *> extension_names =
@@ -57,7 +61,8 @@ protected:
       extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
       instance_ = vka::create_instance("Test", {1, 2, 3}, extension_names,
                                        {"VK_LAYER_LUNARG_standard_validation"});
-      debug_report_callback_ = vka::create_debug_report_callback(*instance_);
+      debug_report_callback_ = vka::create_debug_report_callback(
+          *instance_, &validation_layer_error_occurred_);
     }
     return *instance_;
   }
@@ -459,6 +464,7 @@ protected:
 private:
   static vk::UniqueInstance instance_;
   static vk::UniqueDebugReportCallbackEXT debug_report_callback_;
+  static bool validation_layer_error_occurred_;
 
   uint32_t queue_index_ = UINT32_MAX;
   const std::vector<vka::Vertex> vertices_ = {
@@ -524,6 +530,7 @@ private:
 vk::UniqueInstance TriangleTest::instance_ = vk::UniqueInstance();
 vk::UniqueDebugReportCallbackEXT TriangleTest::debug_report_callback_ =
     vk::UniqueDebugReportCallbackEXT();
+bool TriangleTest::validation_layer_error_occurred_ = false;
 
 TEST_F(TriangleTest, SetsWidthOfTheLoadedTexture) {
   EXPECT_EQ(vka::Texture("texture.jpg").width, 512);
@@ -586,7 +593,7 @@ TEST_F(TriangleTest, CreatesInstanceWithoutThrowingException) {
 }
 
 TEST_F(TriangleTest, CreatesDebugReportCallbackWithoutThrowingException) {
-  EXPECT_NO_THROW(vka::create_debug_report_callback(instance()));
+  EXPECT_NO_THROW(vka::create_debug_report_callback(instance(), nullptr));
 }
 
 TEST_F(TriangleTest, SelectsNonEmptyPhysicalDeviceIfAnyIsAvailable) {
