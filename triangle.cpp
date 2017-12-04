@@ -108,18 +108,15 @@ std::vector<vk::VertexInputAttributeDescription> get_attribute_descriptions() {
 
   return descriptions;
 }
-vk::ApplicationInfo create_application_info(const std::string &name,
-                                            const Version version) {
-  vk::ApplicationInfo info;
-  info.pApplicationName = name.c_str();
-  info.applicationVersion =
-      VK_MAKE_VERSION(version.major, version.minor, version.patch);
-  info.apiVersion = VK_API_VERSION_1_0;
-  return info;
-}
 vk::UniqueInstance
-create_instance(const vk::ApplicationInfo application_info,
+create_instance(const std::string &name, const Version version,
                 const std::vector<const char *> &required_extension_names) {
+  vk::ApplicationInfo application_info;
+  application_info.pApplicationName = name.c_str();
+  application_info.applicationVersion =
+      VK_MAKE_VERSION(version.major, version.minor, version.patch);
+  application_info.apiVersion = VK_API_VERSION_1_0;
+
   vk::InstanceCreateInfo info;
   info.pApplicationInfo = &application_info;
   std::vector<const char *> extension_names = required_extension_names;
@@ -1189,6 +1186,7 @@ void VulkanController::release() {
 }
 void TriangleApplication::run() {
   const std::string application_name = "Triangle";
+  const vka::Version application_version = {0, 1, 0};
   int width = 500;
   int height = 500;
 
@@ -1207,10 +1205,8 @@ void TriangleApplication::run() {
     extension_names.push_back(glfw_extensions[i]);
   }
 
-  const vk::ApplicationInfo application_info =
-      vka::create_application_info(application_name, {0, 1, 0});
-  vk::UniqueInstance instance =
-      vka::create_instance(application_info, extension_names);
+  vk::UniqueInstance instance = vka::create_instance(
+      application_name, application_version, extension_names);
 
   VkSurfaceKHR raw_surface;
   glfwCreateWindowSurface(*instance, window_, nullptr, &raw_surface);

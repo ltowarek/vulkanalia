@@ -52,10 +52,7 @@ protected:
   void TearDown() { release(); }
   static const vk::Instance &instance() {
     if (!instance_) {
-      const std::string application_name = "Test";
-      vk::ApplicationInfo application_info =
-          vka::create_application_info(application_name, {1, 2, 3});
-      instance_ = vka::create_instance(application_info,
+      instance_ = vka::create_instance("Test", {1, 2, 3},
                                        WindowManager::extension_names());
     }
     return *instance_;
@@ -573,12 +570,10 @@ TEST_F(TriangleTest, Returns1Of2GivenDeltaTimeIsHalfSecond) {
 }
 
 TEST_F(TriangleTest, CreatesInstanceWithoutThrowingException) {
-  vk::ApplicationInfo application_info =
-      vka::create_application_info("Test", {1, 2, 3});
   std::vector<const char *> required_extensions_names = {
       VK_KHR_SURFACE_EXTENSION_NAME};
   EXPECT_NO_THROW(
-      vka::create_instance(application_info, required_extensions_names));
+      vka::create_instance("Test", {1, 2, 3}, required_extensions_names));
 }
 
 TEST_F(TriangleTest, SelectsNonEmptyPhysicalDeviceIfAnyIsAvailable) {

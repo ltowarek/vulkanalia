@@ -65,10 +65,8 @@ struct Version {
   uint32_t minor;
   uint32_t patch;
 };
-vk::ApplicationInfo create_application_info(const std::string &name,
-                                            const Version version);
 vk::UniqueInstance
-create_instance(const vk::ApplicationInfo application_info,
+create_instance(const std::string &name, const Version version,
                 const std::vector<const char *> &required_extension_names);
 vk::PhysicalDevice
 select_physical_device(const std::vector<vk::PhysicalDevice> &devices);
