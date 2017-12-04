@@ -110,7 +110,8 @@ std::vector<vk::VertexInputAttributeDescription> get_attribute_descriptions() {
 }
 vk::UniqueInstance
 create_instance(const std::string &name, const Version version,
-                const std::vector<const char *> &required_extension_names) {
+                const std::vector<const char *> &required_extension_names,
+                const std::vector<const char *> &required_layer_names) {
   vk::ApplicationInfo application_info;
   application_info.pApplicationName = name.c_str();
   application_info.applicationVersion =
@@ -122,6 +123,9 @@ create_instance(const std::string &name, const Version version,
   std::vector<const char *> extension_names = required_extension_names;
   info.enabledExtensionCount = static_cast<uint32_t>(extension_names.size());
   info.ppEnabledExtensionNames = extension_names.data();
+  std::vector<const char *> layer_names = required_layer_names;
+  info.enabledLayerCount = static_cast<uint32_t>(layer_names.size());
+  info.ppEnabledLayerNames = layer_names.data();
   return vk::createInstanceUnique(info);
 }
 vk::PhysicalDevice
@@ -1205,9 +1209,11 @@ void TriangleApplication::run() {
     extension_names.push_back(glfw_extensions[i]);
   }
   extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+  std::vector<const char *> layer_names = {
+      "VK_LAYER_LUNARG_standard_validation"};
 
   vk::UniqueInstance instance = vka::create_instance(
-      application_name, application_version, extension_names);
+      application_name, application_version, extension_names, layer_names);
 
   VkSurfaceKHR raw_surface;
   glfwCreateWindowSurface(*instance, window_, nullptr, &raw_surface);

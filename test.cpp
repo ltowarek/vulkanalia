@@ -55,7 +55,8 @@ protected:
       std::vector<const char *> extension_names =
           WindowManager::extension_names();
       extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-      instance_ = vka::create_instance("Test", {1, 2, 3}, extension_names);
+      instance_ = vka::create_instance("Test", {1, 2, 3}, extension_names,
+                                       {"VK_LAYER_LUNARG_standard_validation"});
     }
     return *instance_;
   }
@@ -574,8 +575,10 @@ TEST_F(TriangleTest, Returns1Of2GivenDeltaTimeIsHalfSecond) {
 TEST_F(TriangleTest, CreatesInstanceWithoutThrowingException) {
   std::vector<const char *> required_extensions_names = {
       VK_KHR_SURFACE_EXTENSION_NAME};
-  EXPECT_NO_THROW(
-      vka::create_instance("Test", {1, 2, 3}, required_extensions_names));
+  std::vector<const char *> required_layer_names = {
+      "VK_LAYER_LUNARG_standard_validation"};
+  EXPECT_NO_THROW(vka::create_instance(
+      "Test", {1, 2, 3}, required_extensions_names, required_layer_names));
 }
 
 TEST_F(TriangleTest, SelectsNonEmptyPhysicalDeviceIfAnyIsAvailable) {

@@ -67,7 +67,8 @@ struct Version {
 };
 vk::UniqueInstance
 create_instance(const std::string &name, const Version version,
-                const std::vector<const char *> &required_extension_names);
+                const std::vector<const char *> &required_extension_names,
+                const std::vector<const char *> &required_layer_names);
 vk::PhysicalDevice
 select_physical_device(const std::vector<vk::PhysicalDevice> &devices);
 uint32_t find_graphics_queue_family_index(
