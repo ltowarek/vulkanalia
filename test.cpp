@@ -98,10 +98,9 @@ protected:
     if (!vertex_buffer_) {
       const uint32_t size =
           static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
-      vertex_buffer_ =
-          vka::create_buffer(device(), size,
-                             vk::BufferUsageFlagBits::eVertexBuffer |
-                                 vk::BufferUsageFlagBits::eTransferDst);
+      vertex_buffer_ = vka::create_buffer(
+          device(), size, vk::BufferUsageFlagBits::eVertexBuffer |
+                              vk::BufferUsageFlagBits::eTransferDst);
     }
     return *vertex_buffer_;
   }
@@ -118,10 +117,9 @@ protected:
     if (!index_buffer_) {
       const uint32_t size =
           static_cast<uint32_t>(sizeof(indices()[0]) * indices().size());
-      index_buffer_ =
-          vka::create_buffer(device(), size,
-                             vk::BufferUsageFlagBits::eIndexBuffer |
-                                 vk::BufferUsageFlagBits::eTransferDst);
+      index_buffer_ = vka::create_buffer(
+          device(), size, vk::BufferUsageFlagBits::eIndexBuffer |
+                              vk::BufferUsageFlagBits::eTransferDst);
     }
     return *index_buffer_;
   }
@@ -651,10 +649,9 @@ TEST_F(TriangleTest, CreatesCommandPoolWithoutThrowingException) {
 TEST_F(TriangleTest, CreatesVertexBufferWithoutThrowingException) {
   const uint32_t size =
       static_cast<uint32_t>(sizeof(vertices()[0]) * vertices().size());
-  EXPECT_NO_THROW(
-      vka::create_buffer(device(), size,
-                         vk::BufferUsageFlagBits::eVertexBuffer |
-                             vk::BufferUsageFlagBits::eTransferDst));
+  EXPECT_NO_THROW(vka::create_buffer(
+      device(), size, vk::BufferUsageFlagBits::eVertexBuffer |
+                          vk::BufferUsageFlagBits::eTransferDst));
 }
 
 TEST_F(TriangleTest, CreatesStagingBufferWithoutThrowingException) {

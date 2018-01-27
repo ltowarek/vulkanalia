@@ -995,10 +995,9 @@ void VulkanController::create_vertex_buffer() {
   const uint32_t vertices_size =
       static_cast<uint32_t>(sizeof(vertices_[0]) * vertices_.size());
 
-  vertex_buffer_ =
-      vka::create_buffer(*device_, vertices_size,
-                         vk::BufferUsageFlagBits::eVertexBuffer |
-                             vk::BufferUsageFlagBits::eTransferDst);
+  vertex_buffer_ = vka::create_buffer(
+      *device_, vertices_size, vk::BufferUsageFlagBits::eVertexBuffer |
+                                   vk::BufferUsageFlagBits::eTransferDst);
 
   vertex_buffer_memory_ = vka::allocate_buffer_memory(
       *device_, *vertex_buffer_, physical_device_.getMemoryProperties(),
