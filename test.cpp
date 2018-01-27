@@ -463,6 +463,7 @@ protected:
     command_pool_.release();
     device_.release();
     surface_.release();
+    debug_report_callback_.release();
   }
 
 private:
