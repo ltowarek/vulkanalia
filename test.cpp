@@ -1056,7 +1056,13 @@ TEST_F(TriangleTest, DrawsFrameWithoutThrowingException) {
       device(), command_buffer_pointers, render_pass(), graphics_pipeline(),
       pipeline_layout(), framebuffers(), swapchain_extent(), vertex_buffer(),
       index_buffer(), indices(), descriptor_sets());
-  EXPECT_NO_THROW(vka::draw_frame(device(), swapchain(),
+  vk::SemaphoreCreateInfo semaphore_info;
+  vk::UniqueSemaphore is_image_available =
+      device().createSemaphoreUnique(semaphore_info);
+  vk::UniqueSemaphore is_rendering_finished =
+      device().createSemaphoreUnique(semaphore_info);
+  EXPECT_NO_THROW(vka::draw_frame(device(), swapchain(), *is_image_available,
+                                  *is_rendering_finished,
                                   command_buffer_pointers, queue_index()));
 }
 

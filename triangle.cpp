@@ -750,17 +750,13 @@ void record_command_buffers(
   }
 }
 void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
+                vk::Semaphore &is_image_available,
+                vk::Semaphore &is_rendering_finished,
                 const std::vector<vk::CommandBuffer> &command_buffers,
                 const uint32_t queue_index) {
-  vk::SemaphoreCreateInfo semaphore_info;
-  vk::UniqueSemaphore is_image_available =
-      device.createSemaphoreUnique(semaphore_info);
-  vk::UniqueSemaphore is_rendering_finished =
-      device.createSemaphoreUnique(semaphore_info);
-
   const uint32_t image_index =
       device
-          .acquireNextImageKHR(swapchain, UINT64_MAX, *is_image_available,
+          .acquireNextImageKHR(swapchain, UINT64_MAX, is_image_available,
                                vk::Fence())
           .value;
 
@@ -768,10 +764,10 @@ void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
   vk::PipelineStageFlags wait_stages =
       vk::PipelineStageFlagBits::eColorAttachmentOutput;
   submit_info.waitSemaphoreCount = 1;
-  submit_info.pWaitSemaphores = &*is_image_available;
+  submit_info.pWaitSemaphores = &is_image_available;
   submit_info.pWaitDstStageMask = &wait_stages;
   submit_info.signalSemaphoreCount = 1;
-  submit_info.pSignalSemaphores = &*is_rendering_finished;
+  submit_info.pSignalSemaphores = &is_rendering_finished;
   submit_info.commandBufferCount = 1;
   submit_info.pCommandBuffers = &command_buffers[image_index];
 
@@ -780,7 +776,7 @@ void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
 
   vk::PresentInfoKHR present_info;
   present_info.waitSemaphoreCount = 1;
-  present_info.pWaitSemaphores = &*is_rendering_finished;
+  present_info.pWaitSemaphores = &is_rendering_finished;
   present_info.swapchainCount = 1;
   present_info.pSwapchains = &swapchain;
   present_info.pImageIndices = &image_index;
@@ -1186,7 +1182,20 @@ void VulkanController::draw() {
   for (const auto &command_buffer : command_buffers_) {
     command_buffer_pointers.push_back(*command_buffer);
   }
-  vka::draw_frame(*device_, *swapchain_, command_buffer_pointers, queue_index_);
+  vk::SemaphoreCreateInfo semaphore_info;
+  vk::UniqueSemaphore is_image_available =
+      (*device_).createSemaphoreUnique(semaphore_info);
+  vk::UniqueSemaphore is_rendering_finished =
+      (*device_).createSemaphoreUnique(semaphore_info);
+  try {
+    vka::draw_frame(*device_, *swapchain_, *is_image_available,
+                    *is_rendering_finished, command_buffer_pointers,
+                    queue_index_);
+  } catch (const vk::OutOfDateKHRError &e) {
+    vk::Queue queue = (*device_).getQueue(queue_index_, 0);
+    queue.waitIdle();
+    recreate_swapchain(swapchain_extent_);
+  }
 }
 void VulkanController::release_swapchain() {
   depth_image_view_.release();
