@@ -183,8 +183,8 @@ void record_command_buffers(
     const vk::Buffer &index_buffer, const std::vector<uint32_t> &indices,
     const std::vector<vk::DescriptorSet> &descriptor_sets);
 void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
-                vk::Semaphore &is_image_available,
-                vk::Semaphore &is_rendering_finished,
+                const vk::Semaphore &is_image_available,
+                const vk::Semaphore &is_rendering_finished,
                 const std::vector<vk::CommandBuffer> &command_buffers,
                 const uint32_t queue_index);
 vk::UniqueImage create_image(const vk::Device &device, const uint32_t width,

@@ -750,8 +750,8 @@ void record_command_buffers(
   }
 }
 void draw_frame(const vk::Device &device, const vk::SwapchainKHR &swapchain,
-                vk::Semaphore &is_image_available,
-                vk::Semaphore &is_rendering_finished,
+                const vk::Semaphore &is_image_available,
+                const vk::Semaphore &is_rendering_finished,
                 const std::vector<vk::CommandBuffer> &command_buffers,
                 const uint32_t queue_index) {
   const uint32_t image_index =
